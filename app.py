@@ -3,9 +3,10 @@ from docx import Document
 import os
 import config
 
+api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize OpenAI client with your API key
-client = OpenAI(api_key=config.openai_api_key)
+client = OpenAI(api_key=api_key)
 
 # Define the system prompt for initializing the chat
 system_prompt = "You are a virtual nurse conducting a patient assessment. Let's get started.\n"
