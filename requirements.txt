@@ -1,9 +1,4 @@
-document==1.0
-docx==0.2.4
 openai==1.8.0
-pandas==1.4.2
-streamlit==1.10.0
-docutils @ file:///opt/concourse/worker/volumes/live/c87e10af-317d-45cb-7142-3d02053858ee/volume/docutils_1620827978243/work
-docopt==0.6.2
-exceptiongroup==1.1.0
 python-docx==1.1.0
+streamlit==1.10.0
+pandas==1.4.2
