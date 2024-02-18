@@ -1,7 +1,6 @@
 from openai import OpenAI
 from docx import Document
 import os
-import config
 
 api_key = os.getenv('OPENAI_API_KEY')
 
