@@ -19,7 +19,6 @@ def store_report_in_mongodb(file_path, patient_id):
     result = patients_collection.replace_one(
         {"PatientID": patient_id},
         {"Assessment": encoded_content},
-        upsert=True  # Create a new document if no document matches the query
     )
 
     return result.modified_count  # Returns the number of documents modified
