@@ -18,7 +18,7 @@ def store_report_in_mongodb(file_path, patient_id):
     # Update the patient's document with the encoded report content
     result = patients_collection.replace_one(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": encoded_content}},
+        {"Assessment": encoded_content},
         upsert=True  # Create a new document if no document matches the query
     )
 
