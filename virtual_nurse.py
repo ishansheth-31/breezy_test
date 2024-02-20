@@ -30,7 +30,7 @@ def store_report_in_mongodb(file_path, patient_id):
 
     # patient.save()
 
-    result = patients_collection.find_one_and_update(
+    result = patients_collection.update_one(
         {"PatientID": patient_id},
         { "$inc": {"Assessment": encoded_content}}
     )
