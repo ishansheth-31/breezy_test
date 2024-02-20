@@ -49,10 +49,8 @@ def send_email(to_email, link):
         return False
 
 def fetch_patients():
-    # Convert MongoDB query result to a pandas DataFrame for easier manipulation.
     patients_list = list(patients_collection.find({}))
     patients_df = pd.DataFrame(patients_list)
-    # Convert 'Date' from string to datetime format for proper sorting
     patients_df['Date'] = pd.to_datetime(patients_df['Date'])
     return patients_df
 
@@ -65,49 +63,36 @@ def download_report(patient_id):
     return None, None
 
 def display_patient_info():
-    display_patient_info()
-    fs = GridFS(db)
-    
     st.title("Breezy Portal")
     patients_df = fetch_patients()
 
-    # Sort patients by 'Date' which now includes both date and time.
     patients_df.sort_values(by='Date', inplace=True)
-
-    # Extract just the date part for the sidebar calendar.
     patients_df['appointmentDate'] = patients_df['Date'].dt.date
     min_date = patients_df['appointmentDate'].min()
     max_date = patients_df['appointmentDate'].max()
 
-    # Use a calendar for date selection in the sidebar
     selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
     
-    # Filter patients by the selected date.
     selected_patients = patients_df[patients_df['appointmentDate'] == selected_date]
     
     for _, patient in selected_patients.iterrows():
-        # Format time to a 12-hour format with AM/PM.
         appointment_time = patient['Date'].strftime('%I:%M %p')
         patient_name_with_time = f"{patient['fName']} {patient['lName']} - {appointment_time}"
         with st.expander(patient_name_with_time):
             st.write(f"Email: {patient['Email']}")
             st.write(f"Status: {patient['Status']}")
-            if patient['Assessment'] != "n/a":
-                # Assuming 'Assessment' would be a valid URL or path to a document.
-                st.markdown(f"[Download Assessment]({patient['Assessment']})")
-            if st.button("Send Email", key=str(patient['_id'])):
+            if patient['Status'] != "Sent":
                 link = "https://breezy.streamlit.app"
-                if send_email(patient['Email'], link):
-                    st.success(f"Email sent to {patient['Email']}")
-                else:
-                    st.error("Failed to send email.")
-            if 'Assessment' in patient:
-                file_id = patient['Assessment']
-                grid_out = fs.get(file_id)
-                file_data = grid_out.read()
-                file_name = grid_out.filename
-                download_button_label = "Download Report"
-                st.download_button(label=download_button_label, data=BytesIO(file_data), file_name=file_name, mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+                if st.button("Send Email", key=str(patient['_id'])):
+                    if send_email(patient['Email'], link):
+                        st.success(f"Email sent to {patient['Email']}")
+                    else:
+                        st.error("Failed to send email.")
+
+            if 'AssessmentFileID' in patient:
+                data, filename = download_report(patient['PatientID'])
+                if data and filename:
+                    st.download_button(label="Download Report", data=BytesIO(data), file_name=filename, mime='application/pdf')
 
 def main():
     display_patient_info()
