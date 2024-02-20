@@ -35,7 +35,7 @@ def store_full_assessment_in_mongodb(chat_history, patient_id):
     structured_assessment = [{"question": q, "answer": a} for q, a in chat_history]
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"FullAssessment": structured_assessment}},
+        {"$set": {"Assessment": structured_assessment}},
         return_document=True
     )
 
@@ -159,7 +159,7 @@ if st.button("Finish Conversation"):
     # Ensure chat_history contains all interactions
     full_chat_history = st.session_state.chat_history
     
-    patient_id = extract_query_parameters()  # Implement this function as needed
+    patient_id = extract_query_parameters()
     if patient_id:
         success = store_full_assessment_in_mongodb(full_chat_history, patient_id)
         if success:
