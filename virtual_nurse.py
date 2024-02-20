@@ -44,10 +44,10 @@ def store_report_in_mongodb(file_path, patient_id):
     # Update the patient's document with the encoded report content
 
     st.write("### Encoded Content")
-    st.write(encoded_content)
+    st.write(report_content)
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": str(encoded_content)}},
+        {"$set": {"Assessment": report_content}},
         return_document=True
     )
 
