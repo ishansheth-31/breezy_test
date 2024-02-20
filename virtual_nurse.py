@@ -16,7 +16,21 @@ def store_report_in_mongodb(file_path, patient_id):
     encoded_content = base64.b64encode(report_content).decode("utf-8")
 
     # Update the patient's document with the encoded report content
-    result = patients_collection.replace_one(
+    patient = None
+
+    # try:
+    #     patient = patients_collection.find_one({"PatientID": patient_id})
+    # catch Exception as e:
+    #     print(e)
+    
+    # if(!patient):
+    #     print("Could not find patient")
+
+    # patient.Assessment = encoded_content
+
+    # patient.save()
+
+    result = patients_collection.find_one(
         {"PatientID": patient_id},
         {"Assessment": encoded_content},
     )
