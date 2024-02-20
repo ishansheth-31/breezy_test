@@ -47,7 +47,7 @@ def store_report_in_mongodb(file_path, patient_id):
     st.write(encoded_content)
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": "this is a test fr fr"}},
+        {"$set": {"Assessment": str(encoded_content)}},
         return_document=True
     )
 
