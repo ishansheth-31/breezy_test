@@ -1,5 +1,11 @@
 import streamlit as st
 from app import MedicalChatbot
+from pymongo import MongoClient
+from uuid import UUID
+
+client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
+db = client.breezydata
+patients_collection = db.patientportal
 
 # Initialize the chatbot in the session state if it doesn't exist
 if 'bot' not in st.session_state:
@@ -70,6 +76,16 @@ def handle_initial_questions():
 
             st.experimental_rerun()
 
+def extract_query_parameters():
+    query_params = st.experimental_get_query_params()
+    patient_id = query_params.get("patient_id", [None])[0]
+    try:
+        # Validate that the patient_id is a valid UUID
+        UUID(patient_id, version=4)
+        return patient_id
+    except ValueError:
+        return None
+
 def handle_chat_after_initial_questions():
     if 'message_counter' not in st.session_state:
         st.session_state['message_counter'] = 0
@@ -94,6 +110,8 @@ if st.session_state['current_question_index'] < len(st.session_state['initial_qu
 else:
     handle_chat_after_initial_questions()
 
+patient_id = extract_query_parameters()
+
 if st.button("Finish Conversation"):
     bot.finished = True
     for question, answer in st.session_state.initial_answers.items():
@@ -102,4 +120,5 @@ if st.button("Finish Conversation"):
     file_path = bot.extract_and_save_report(report_content)
     st.write("### Patient Assessment Report")
     st.write(report_content)
+    patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Assessment": report_content}})
     st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
