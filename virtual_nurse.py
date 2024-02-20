@@ -9,6 +9,30 @@ client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kx
 db = client.breezydata
 patients_collection = db.patientportal
 
+# Ensure bot and related session state variables are initialized immediately
+def initialize_session_state():
+    if 'bot' not in st.session_state:
+        st.session_state['bot'] = MedicalChatbot()
+        st.session_state['chat_history'] = []
+        st.session_state['initial_questions'] = [
+            "Are you a new patient?",
+            "What is your name?",
+            "What is your approximate height in inches?",
+            "What is your approximate weight in pounds?",
+            "Are you currently taking any medications?",
+            "Have you had any recent surgeries?",
+            "Do you have any known drug allergies?",
+            "Finally, what are you in for today?"
+        ]
+        st.session_state['initial_answers'] = {}
+        st.session_state['current_question_index'] = 0
+
+# Call the initialization function right at the start of your script
+initialize_session_state()
+
+# Now you can safely access st.session_state.bot without encountering an AttributeError
+bot = st.session_state.bot
+
 def store_report_in_mongodb(file_path, patient_id):
     # # Open the file and read its content
     # with open(file_path, 'rb') as report_file:
