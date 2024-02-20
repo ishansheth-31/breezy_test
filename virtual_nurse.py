@@ -31,16 +31,16 @@ initialize_session_state()
 # Now you can safely access st.session_state.bot without encountering an AttributeError
 bot = st.session_state.bot
 
-def store_assessment_in_mongodb(assessment_dict, patient_id):
-    # Update the patient's document with the assessment dictionary
+def store_full_assessment_in_mongodb(chat_history, patient_id):
+    structured_assessment = [{"question": q, "answer": a} for q, a in chat_history]
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": assessment_dict}},
+        {"$set": {"FullAssessment": structured_assessment}},
         return_document=True
     )
 
     if result:
-        st.success("Assessment stored successfully for patient ID: " + str(patient_id))
+        st.success("Full assessment stored successfully for patient ID: " + str(patient_id))
         return True
     else:
         st.error("Could not find patient with ID: " + str(patient_id))
@@ -156,13 +156,13 @@ patient_id = extract_query_parameters()
 
 if st.button("Finish Conversation"):
     bot.finished = True
-    # Assuming bot.initial_questions_dict or st.session_state.initial_answers contains the assessment data
-    assessment_dict = st.session_state.initial_answers  # Or any other source you have for Q&A pairs
+    # Ensure chat_history contains all interactions
+    full_chat_history = st.session_state.chat_history
     
-    patient_id = extract_query_parameters()  # Make sure this function is correctly implemented to extract patient_id
+    patient_id = extract_query_parameters()  # Implement this function as needed
     if patient_id:
-        success = store_assessment_in_mongodb(assessment_dict, patient_id)
+        success = store_full_assessment_in_mongodb(full_chat_history, patient_id)
         if success:
-            st.download_button("Download Assessment", data=str(assessment_dict), file_name="Patient_Assessment.txt", mime="text/plain")
+            st.download_button("Download Full Assessment", data=str(full_chat_history), file_name="Patient_Full_Assessment.txt", mime="text/plain")
     else:
         st.error("Could not update patient record. Patient ID is missing or invalid.")
