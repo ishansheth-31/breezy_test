@@ -9,7 +9,6 @@ client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kx
 db = client.breezydata
 patients_collection = db.patientportal
 
-# Ensure bot and related session state variables are initialized immediately
 def initialize_session_state():
     if 'bot' not in st.session_state:
         st.session_state['bot'] = MedicalChatbot()
@@ -27,35 +26,24 @@ def initialize_session_state():
         st.session_state['initial_answers'] = {}
         st.session_state['current_question_index'] = 0
 
-# Call the initialization function right at the start of your script
 initialize_session_state()
 
 # Now you can safely access st.session_state.bot without encountering an AttributeError
 bot = st.session_state.bot
 
-def store_report_in_mongodb(file_path, patient_id):
-    # # Open the file and read its content
-    with open(file_path, 'rb') as report_file:
-        report_content = report_file.read()
-
-    # # Encode the content as base64 for compact storage
-    encoded_content = base64.b64encode(report_content).decode("utf-8")
-
-    # Update the patient's document with the encoded report content
-
-    st.write("### Encoded Content")
-    st.write(report_content)
+def store_assessment_in_mongodb(assessment_dict, patient_id):
+    # Update the patient's document with the assessment dictionary
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": report_content}},
+        {"$set": {"Assessment": assessment_dict}},
         return_document=True
     )
 
     if result:
-        print("Report stored successfully for patient ID:", patient_id)
+        st.success("Assessment stored successfully for patient ID: " + str(patient_id))
         return True
     else:
-        print("Could not find patient with ID:", patient_id)
+        st.error("Could not find patient with ID: " + str(patient_id))
         return False
 
 # Initialize the chatbot in the session state if it doesn't exist
@@ -168,16 +156,13 @@ patient_id = extract_query_parameters()
 
 if st.button("Finish Conversation"):
     bot.finished = True
-    for question, answer in st.session_state.initial_answers.items():
-        bot.initial_questions_dict[question] = answer
-    report_content = bot.create_report().choices[0].message.content
-    file_path = bot.extract_and_save_report(report_content)
-    st.write("### Patient Assessment Report")
-    st.write(report_content)
+    # Assuming bot.initial_questions_dict or st.session_state.initial_answers contains the assessment data
+    assessment_dict = st.session_state.initial_answers  # Or any other source you have for Q&A pairs
     
-    if patient_id is not None:
-        store_report_in_mongodb(file_path, patient_id)
-        st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
+    patient_id = extract_query_parameters()  # Make sure this function is correctly implemented to extract patient_id
+    if patient_id:
+        success = store_assessment_in_mongodb(assessment_dict, patient_id)
+        if success:
+            st.download_button("Download Assessment", data=str(assessment_dict), file_name="Patient_Assessment.txt", mime="text/plain")
     else:
         st.error("Could not update patient record. Patient ID is missing or invalid.")
-
