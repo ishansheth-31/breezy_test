@@ -30,9 +30,9 @@ def store_report_in_mongodb(file_path, patient_id):
 
     # patient.save()
 
-    result = patients_collection.find_one(
+    result = patients_collection.findOneAndUpdate(
         {"PatientID": patient_id},
-        {"Assessment": encoded_content},
+        { "$inc": {"Assessment": encoded_content}}
     )
 
     return result.modified_count  # Returns the number of documents modified
