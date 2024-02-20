@@ -35,11 +35,11 @@ bot = st.session_state.bot
 
 def store_report_in_mongodb(file_path, patient_id):
     # # Open the file and read its content
-    # with open(file_path, 'rb') as report_file:
-    #     report_content = report_file.read()
+    with open(file_path, 'rb') as report_file:
+        report_content = report_file.read()
 
     # # Encode the content as base64 for compact storage
-    # encoded_content = base64.b64encode(report_content).decode("utf-8")
+    encoded_content = base64.b64encode(report_content).decode("utf-8")
 
     # Update the patient's document with the encoded report content
 
