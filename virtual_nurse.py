@@ -3,41 +3,39 @@ from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
 
-# MongoDB setup
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
 patients_collection = db.patientportal
 
-# Function to safely get or create the bot instance in session state
-def get_or_create_bot():
-    if 'bot' not in st.session_state:
-        st.session_state['bot'] = MedicalChatbot()
-        st.session_state['chat_history'] = []
-        st.session_state['initial_questions'] = [
-            "Are you a new patient?",
-            "What is your name?",
-            "What is your approximate height in inches?",
-            "What is your approximate weight in pounds?",
-            "Are you currently taking any medications?",
-            "Have you had any recent surgeries?",
-            "Do you have any known drug allergies?",
-            "Finally, what are you in for today?"
-        ]
-        st.session_state['initial_answers'] = {}
-        st.session_state['current_question_index'] = 0
-    return st.session_state['bot']
+# Initialize the chatbot in the session state if it doesn't exist
+if 'bot' not in st.session_state:
+    st.session_state['bot'] = MedicalChatbot()
+    st.session_state['chat_history'] = []
+    st.session_state['initial_questions'] = [
+        "Are you a new patient?",
+        "What is your name?",
+        "What is your approximate height in inches?",
+        "What is your approximate weight in pounds?",
+        "Are you currently taking any medications?",
+        "Have you had any recent surgeries?",
+        "Do you have any known drug allergies?",
+        "Finally, what are you in for today?"
+    ]
+    st.session_state['initial_answers'] = {}
+    st.session_state['current_question_index'] = 0
+
+bot = st.session_state.bot
 
 def display_chat_history():
     chat_container = st.container()
     with chat_container:
-        for role, message in st.session_state.get('chat_history', []):
+        for role, message in st.session_state.chat_history:
             if role == "You":
                 st.markdown(f"**{role}:** {message}")
             else:
                 st.markdown(f"*{role}:* {message}")
 
 def handle_initial_questions():
-    bot = get_or_create_bot()  # Ensure bot is initialized
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
         question = st.session_state['initial_questions'][st.session_state['current_question_index']]
         input_key = f"user_response_{st.session_state['current_question_index']}"
@@ -90,8 +88,8 @@ def extract_query_parameters():
             return None
     return None
 
+
 def handle_chat_after_initial_questions():
-    bot = get_or_create_bot()  # Ensure bot is initialized
     if 'message_counter' not in st.session_state:
         st.session_state['message_counter'] = 0
 
@@ -118,7 +116,6 @@ else:
 patient_id = extract_query_parameters()
 
 if st.button("Finish Conversation"):
-    bot = get_or_create_bot()  # Ensure bot is initialized
     bot.finished = True
     for question, answer in st.session_state.initial_answers.items():
         bot.initial_questions_dict[question] = answer
@@ -126,9 +123,10 @@ if st.button("Finish Conversation"):
     file_path = bot.extract_and_save_report(report_content)
     st.write("### Patient Assessment Report")
     st.write(report_content)
-
+    
     if patient_id is not None:
         patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Assessment": report_content}})
         st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
     else:
         st.error("Could not update patient record. Patient ID is missing or invalid.")
+
