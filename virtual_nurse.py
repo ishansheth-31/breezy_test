@@ -79,12 +79,15 @@ def handle_initial_questions():
 def extract_query_parameters():
     query_params = st.experimental_get_query_params()
     patient_id = query_params.get("patient_id", [None])[0]
-    try:
-        # Validate that the patient_id is a valid UUID
-        UUID(patient_id, version=4)
-        return patient_id
-    except ValueError:
-        return None
+    if patient_id is not None:
+        try:
+            # Validate that the patient_id is a valid UUID
+            valid_uuid = UUID(patient_id, version=4)
+            return str(valid_uuid)  # Return the validated UUID as a string
+        except ValueError:
+            return None
+    return None
+
 
 def handle_chat_after_initial_questions():
     if 'message_counter' not in st.session_state:
@@ -120,5 +123,10 @@ if st.button("Finish Conversation"):
     file_path = bot.extract_and_save_report(report_content)
     st.write("### Patient Assessment Report")
     st.write(report_content)
-    patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Assessment": report_content}})
-    st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
+    
+    if patient_id is not None:
+        patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Assessment": report_content}})
+        st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
+    else:
+        st.error("Could not update patient record. Patient ID is missing or invalid.")
+
