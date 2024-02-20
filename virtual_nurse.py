@@ -5,8 +5,10 @@ from pymongo import MongoClient
 from uuid import UUID
 from bson.binary import Binary
 
+client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
+db = client.breezydata
+patients_collection = db.patientportal
 
-# Assuming `file_path` is the path to the generated Word document
 def store_report_in_mongodb(file_path, patient_id):
     # Open the file and read its content
     with open(file_path, 'rb') as report_file:
@@ -16,30 +18,18 @@ def store_report_in_mongodb(file_path, patient_id):
     encoded_content = base64.b64encode(report_content).decode("utf-8")
 
     # Update the patient's document with the encoded report content
-    patient = None
-
-    # try:
-    #     patient = patients_collection.find_one({"PatientID": patient_id})
-    # catch Exception as e:
-    #     print(e)
-    
-    # if(!patient):
-    #     print("Could not find patient")
-
-    # patient.Assessment = encoded_content
-
-    # patient.save()
-
-    result = patients_collection.update_one(
+    result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        { "$inc": {"Assessment": encoded_content}}
+        {"$set": {"Assessment": encoded_content}},
+        return_document=True
     )
 
-    return result.modified_count  # Returns the number of documents modified
-
-client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
-db = client.breezydata
-patients_collection = db.patientportal
+    if result:
+        print("Report stored successfully for patient ID:", patient_id)
+        return True
+    else:
+        print("Could not find patient with ID:", patient_id)
+        return False
 
 # Initialize the chatbot in the session state if it doesn't exist
 if 'bot' not in st.session_state:
