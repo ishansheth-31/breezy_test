@@ -5,6 +5,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import uuid4
+from gridfs import GridFS
+from io import BytesIO
+
 
 
 # MongoDB setup
@@ -53,7 +56,18 @@ def fetch_patients():
     patients_df['Date'] = pd.to_datetime(patients_df['Date'])
     return patients_df
 
+def download_report(patient_id):
+    fs = GridFS(db)
+    patient = patients_collection.find_one({"PatientID": patient_id})
+    if patient and "AssessmentFileID" in patient:
+        grid_out = fs.get(patient['AssessmentFileID'])
+        return grid_out.read(), grid_out.filename
+    return None, None
+
 def display_patient_info():
+    display_patient_info()
+    fs = GridFS(db)
+    
     st.title("Breezy Portal")
     patients_df = fetch_patients()
 
@@ -87,6 +101,13 @@ def display_patient_info():
                     st.success(f"Email sent to {patient['Email']}")
                 else:
                     st.error("Failed to send email.")
+            if 'Assessment' in patient:
+                file_id = patient['Assessment']
+                grid_out = fs.get(file_id)
+                file_data = grid_out.read()
+                file_name = grid_out.filename
+                download_button_label = "Download Report"
+                st.download_button(label=download_button_label, data=BytesIO(file_data), file_name=file_name, mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 def main():
     display_patient_info()

@@ -2,6 +2,17 @@ import streamlit as st
 from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
+from gridfs import GridFS
+from bson import ObjectId
+
+# Assuming `file_path` is the path to the generated Word document
+def store_report_in_mongodb(file_path, patient_id):
+    fs = GridFS(db)
+    with open(file_path, 'rb') as report_file:
+        file_id = fs.put(report_file, filename=file_path, patient_id=patient_id)
+    # Update the patient's document with the file ID
+    patients_collection.update_one({"PatientID": patient_id}, {"$set": {"AssessmentFileID": file_id}})
+    return file_id
 
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
@@ -125,7 +136,7 @@ if st.button("Finish Conversation"):
     st.write(report_content)
     
     if patient_id is not None:
-        patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Assessment": report_content}})
+        store_report_in_mongodb(file_path, patient_id)
         st.download_button("Download Report", data=open(file_path, "rb"), file_name="Patient_Assessment_Report.docx")
     else:
         st.error("Could not update patient record. Patient ID is missing or invalid.")
