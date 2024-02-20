@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 from app import MedicalChatbot
 from pymongo import MongoClient
@@ -7,17 +8,21 @@ from bson.binary import Binary
 
 # Assuming `file_path` is the path to the generated Word document
 def store_report_in_mongodb(file_path, patient_id):
-    # Open the file and read its binary content
+    # Open the file and read its content
     with open(file_path, 'rb') as report_file:
-        binary_data = Binary(report_file.read())
-    
-    # Store or update the binary data in the patient's document
+        report_content = report_file.read()
+
+    # Encode the content as base64 for compact storage
+    encoded_content = base64.b64encode(report_content).decode("utf-8")
+
+    # Update the patient's document with the encoded report content
     result = patients_collection.update_one(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": binary_data}},
-        upsert=True  # This creates a new document if no document matches the query
+        {"$set": {"Assessment": encoded_content}},
+        upsert=True  # Create a new document if no document matches the query
     )
-    return result.modified_count  # Returns the number of documents modifiedxxw
+
+    return result.modified_count  # Returns the number of documents modified
 
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
