@@ -32,12 +32,12 @@ initialize_session_state()
 bot = st.session_state.bot
 
 def store_full_assessment_in_mongodb(chat_history, patient_id):
-    # Transform chat history into a structured format
-    structured_assessment = []
+    # Transform chat history into a single structured dictionary
+    structured_assessment = {}
     for i in range(0, len(chat_history), 2):
         # Assuming every question is followed by an answer in the chat history
         question, answer = chat_history[i][1], chat_history[i + 1][1] if i + 1 < len(chat_history) else "No answer"
-        structured_assessment.append({"question": question, "answer": answer})
+        structured_assessment[question] = answer
 
     # Update MongoDB with the structured assessment
     result = patients_collection.find_one_and_update(
@@ -52,6 +52,7 @@ def store_full_assessment_in_mongodb(chat_history, patient_id):
     else:
         st.error("Could not find patient with ID: " + str(patient_id))
         return False
+
 
 # Initialize the chatbot in the session state if it doesn't exist
 if 'bot' not in st.session_state:
