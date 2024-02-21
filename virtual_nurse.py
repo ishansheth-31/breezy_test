@@ -49,7 +49,7 @@ def store_full_assessment_in_mongodb(chat_history, patient_id):
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
         {"$set": structured_data},
-        {"$set": {"Assessment": chat_history}},
+        {"Assessment": chat_history},
         upsert=True,  # This will insert a new document if one doesn't exist
         return_document=True
     )
