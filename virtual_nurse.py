@@ -43,13 +43,13 @@ def store_full_assessment_in_mongodb(chat_history, patient_id):
         "Surgeries": answers.get("Have you had any recent surgeries?", "No information"),
         "Drug_Allergies": answers.get("Do you have any known drug allergies?", "No information"),
         "Reason_For_Visit": answers.get("Finally, what are you in for today?", "No information"),
-        "Assessment": chat_history  # Store the full chat history in the Assessment field
     }
 
     # Update MongoDB with the structured data
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
         {"$set": structured_data},
+        {"$set": {"Assessment": chat_history}},
         upsert=True,  # This will insert a new document if one doesn't exist
         return_document=True
     )
@@ -106,14 +106,22 @@ def handle_initial_questions():
         elif question == "What is your name?" or question == "Finally, what are you in for today?":
             user_response = st.text_input(question, key=input_key)
         elif question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
-            unit = "inches" if "height" in question.lower() else "pounds"
-            user_response = st.number_input(question, min_value=0, format="%d", key=input_key)
-            user_response = f"{user_response} {unit}"
+            # Keep height and weight as numbers
+            if "height" in question.lower():
+                user_response = st.number_input(question, min_value=0, format="%d", key=input_key)
+                st.session_state.initial_answers["Approx_Height"] = user_response  # Store as number
+            else:  # "weight" in question.lower()
+                user_response = st.number_input(question, min_value=0, format="%d", key=input_key)
+                st.session_state.initial_answers["Approx_Weight"] = user_response  # Store as number
 
         if user_response is not None and st.button("Submit", key=f"submit_{input_key}"):
             st.session_state.chat_history.append(("Virtual Nurse", question))
-            st.session_state.chat_history.append(("You", user_response))
-            st.session_state.initial_answers[question] = user_response
+            response_text = f"{user_response}" if question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"] else user_response
+            st.session_state.chat_history.append(("You", response_text))
+
+            # For non-height and non-weight questions, store the answer normally
+            if question not in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
+                st.session_state.initial_answers[question] = user_response
 
             # If elaboration is required, save the answer
             if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
