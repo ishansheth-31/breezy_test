@@ -162,9 +162,9 @@ def handle_chat_after_initial_questions():
 
 st.title("Virtual Nurse Patient Assessment")
 
-st.radio(
+st.checkbox(
     "Do you consent to filling out this assessment?",
-    ["Yes", "No"],
+    "Yes",
 )
 display_chat_history()
 
