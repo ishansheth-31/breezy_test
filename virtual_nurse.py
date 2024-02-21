@@ -162,6 +162,10 @@ def handle_chat_after_initial_questions():
 
 st.title("Virtual Nurse Patient Assessment")
 
+st.radio(
+    "Do you consent to filling out this assessment?",
+    ["Yes", "No"],
+)
 display_chat_history()
 
 if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
