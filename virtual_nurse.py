@@ -163,8 +163,7 @@ def handle_chat_after_initial_questions():
 st.title("Virtual Nurse Patient Assessment")
 
 st.checkbox(
-    "Do you consent to filling out this assessment?",
-    "Yes",
+    "I consent to filling out this assessment?"
 )
 display_chat_history()
 
