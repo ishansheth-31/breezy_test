@@ -6,8 +6,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import uuid4
 from gridfs import GridFS
+import base64
+from bson.binary import Binary
+from docx import Document
 from io import BytesIO
+from openai import OpenAI
+import os
 
+api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=api_key)
 
 
 # MongoDB setup
@@ -54,14 +61,6 @@ def fetch_patients():
     patients_df['Date'] = pd.to_datetime(patients_df['Date'])
     return patients_df
 
-def download_report(patient_id):
-    fs = GridFS(db)
-    patient = patients_collection.find_one({"PatientID": patient_id})
-    if patient and "AssessmentFileID" in patient:
-        grid_out = fs.get(patient['AssessmentFileID'])
-        return grid_out.read(), grid_out.filename
-    return None, None
-
 def display_patient_info():
     st.title("Breezy Portal")
     patients_df = fetch_patients()
@@ -77,10 +76,10 @@ def display_patient_info():
     
     for _, patient in selected_patients.iterrows():
         appointment_time = patient['Date'].strftime('%I:%M %p')
-        patient_name_with_time = f"{patient['fName']} {patient['lName']} - {appointment_time}"
-        with st.expander(patient_name_with_time):
+        with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
             st.write(f"Email: {patient['Email']}")
             st.write(f"Status: {patient['Status']}")
+            
             if patient['Status'] != "Sent":
                 link = "https://breezy.streamlit.app"
                 if st.button("Send Email", key=str(patient['_id'])):
@@ -88,11 +87,6 @@ def display_patient_info():
                         st.success(f"Email sent to {patient['Email']}")
                     else:
                         st.error("Failed to send email.")
-
-            if 'AssessmentFileID' in patient:
-                data, filename = download_report(patient['PatientID'])
-                if data and filename:
-                    st.download_button(label="Download Report", data=BytesIO(data), file_name=filename, mime='application/pdf')
 
 def main():
     display_patient_info()

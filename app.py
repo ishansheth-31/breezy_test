@@ -59,7 +59,7 @@ class MedicalChatbot:
             'Implementation': '',
             'Evaluation': ''
         }
-        self.initial_questions_dict = {}
+
         self.initial_questions_answers = ""
     
     def handle_initial_questions(self):

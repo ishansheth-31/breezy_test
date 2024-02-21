@@ -32,17 +32,25 @@ initialize_session_state()
 bot = st.session_state.bot
 
 def store_full_assessment_in_mongodb(chat_history, patient_id):
-    # Transform chat history into a single structured dictionary
-    structured_assessment = {}
-    for i in range(0, len(chat_history), 2):
-        # Assuming every question is followed by an answer in the chat history
-        question, answer = chat_history[i][1], chat_history[i + 1][1] if i + 1 < len(chat_history) else "No answer"
-        structured_assessment[question] = answer
+    # Extract answers from initial_questions and map them to the database columns
+    answers = st.session_state['initial_answers']
+    structured_data = {
+        "New_Patient": answers.get("Are you a new patient?", "No information"),
+        "Name": answers.get("What is your name?", "No information"),
+        "Approx_Height": answers.get("What is your approximate height in inches?", "No information"),
+        "Approx_Weight": answers.get("What is your approximate weight in pounds?", "No information"),
+        "Medications": answers.get("Are you currently taking any medications?", "No information"),
+        "Surgeries": answers.get("Have you had any recent surgeries?", "No information"),
+        "Drug_Allergies": answers.get("Do you have any known drug allergies?", "No information"),
+        "Reason_For_Visit": answers.get("Finally, what are you in for today?", "No information"),
+        "Assessment": chat_history  # Store the full chat history in the Assessment field
+    }
 
-    # Update MongoDB with the structured assessment
+    # Update MongoDB with the structured data
     result = patients_collection.find_one_and_update(
         {"PatientID": patient_id},
-        {"$set": {"Assessment": structured_assessment}},
+        {"$set": structured_data},
+        upsert=True,  # This will insert a new document if one doesn't exist
         return_document=True
     )
 
@@ -50,8 +58,9 @@ def store_full_assessment_in_mongodb(chat_history, patient_id):
         st.success("Full assessment stored successfully for patient ID: " + str(patient_id))
         return True
     else:
-        st.error("Could not find patient with ID: " + str(patient_id))
+        st.error("Could not store the assessment. An error occurred.")
         return False
+
 
 
 # Initialize the chatbot in the session state if it doesn't exist
