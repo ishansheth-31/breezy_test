@@ -12,6 +12,8 @@ from docx import Document
 from io import BytesIO
 from openai import OpenAI
 import os
+from datetime import datetime
+import pytz
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
 Document the patient's responses and any additional relevant information, as a nurse would for a doctor to use.
@@ -56,7 +58,7 @@ openai_client = OpenAI(api_key=api_key)
 # MongoDB setup
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
-patients_collection = db.patientportal
+patients_collection = db.emfd
 
 def send_email(to_email, link):
 
@@ -160,8 +162,38 @@ def download_report_as_word_document(basic_info, report_content, file_path='Pati
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
+def add_new_patient(fName, lName, email, appointment_datetime):
+    new_patient = {
+        "fName": fName,
+        "lName": lName,
+        "Email": email,
+        "Status": "Not Sent",
+        "Date": appointment_datetime,
+        "PatientID": "",  # Empty PatientID field
+        "Assessment": ""
+    }
+    patients_collection.insert_one(new_patient)
+
+
 def display_patient_info():
     st.title("Breezy Portal")
+
+        # Sidebar form for adding a new patient
+    # New Patient Form in Sidebar
+    with st.sidebar.form("new_patient_form"):
+        st.write("Add New Patient")
+        fName = st.text_input("First Name")
+        lName = st.text_input("Last Name")
+        email = st.text_input("Email")
+        appointment_date = st.date_input("Appointment Date")
+        appointment_time = st.time_input("Appointment Time")
+        submit_button = st.form_submit_button("Submit")
+
+        if submit_button:
+            appointment_datetime = datetime.combine(appointment_date, appointment_time)
+            add_new_patient(fName, lName, email, appointment_datetime)
+            st.sidebar.success("Patient Added Successfully")
+
     patients_df = fetch_patients()
 
     patients_df.sort_values(by='Date', inplace=True)

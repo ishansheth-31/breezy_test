@@ -7,7 +7,7 @@ from bson.binary import Binary
 
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
-patients_collection = db.patientportal
+patients_collection = db.emfd
 
 def initialize_session_state():
     if 'bot' not in st.session_state:
