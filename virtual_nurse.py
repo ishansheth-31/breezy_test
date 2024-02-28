@@ -156,16 +156,24 @@ def handle_chat_after_initial_questions():
     if 'message_counter' not in st.session_state:
         st.session_state['message_counter'] = 0
 
+    # Use a unique key for each user message to ensure no conflicts
     user_message_key = f"user_message_{st.session_state['message_counter']}"
     user_message = st.text_input("Your message:", key=user_message_key)
-    submit_message = st.button("Send", key=f"send_{user_message_key}")
 
-    if submit_message and user_message:
+    # Trigger the bot's response when the user message is submitted
+    if st.button("Send", key=f"send_{user_message_key}") and user_message:
         response = bot.generate_response(user_message)
+        # Append both the user message and the bot's response to the chat history
+        # This ensures both are displayed immediately after the user hits "Send"
         st.session_state.chat_history.append(("You", user_message))
         st.session_state.chat_history.append(("Virtual Nurse", response))
-
+        
+        # Increment the message counter for the next message
         st.session_state['message_counter'] += 1
+        
+        # Force Streamlit to rerun the script to reflect the updated chat history
+        st.experimental_rerun()
+
 
 st.title("Virtual Nurse Patient Assessment")
 
