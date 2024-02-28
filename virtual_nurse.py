@@ -187,26 +187,24 @@ def handle_chat_after_initial_questions():
 
 st.title("Virtual Nurse Patient Assessment")
 
-st.checkbox(
-    "I consent to filling out this assessment?"
-)
-display_chat_history()
+if st.checkbox("I consent to filling out this assessment?"):
+    display_chat_history()
 
-if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
-    handle_initial_questions()
-else:
-    handle_chat_after_initial_questions()
-
-patient_id = extract_query_parameters()
-
-
-if bot.finished == True:
-    full_chat_history = st.session_state.chat_history
-    
-    patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly
-    if patient_id:
-        success = store_full_assessment_in_mongodb(full_chat_history, patient_id)
-        if success:
-            st.download_button("Download Full Assessment", data=str(full_chat_history), file_name="Patient_Full_Assessment.txt", mime="text/plain")
+    if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
+        handle_initial_questions()
     else:
-        st.error("Could not update patient record. Patient ID is missing or invalid.")
+        handle_chat_after_initial_questions()
+
+    patient_id = extract_query_parameters()
+
+
+    if bot.finished == True:
+        full_chat_history = st.session_state.chat_history
+        
+        patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly
+        if patient_id:
+            success = store_full_assessment_in_mongodb(full_chat_history, patient_id)
+            if success:
+                st.download_button("Download Full Assessment", data=str(full_chat_history), file_name="Patient_Full_Assessment.txt", mime="text/plain")
+        else:
+            st.error("Could not update patient record. Patient ID is missing or invalid.")
