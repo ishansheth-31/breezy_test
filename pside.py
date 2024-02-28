@@ -9,6 +9,7 @@ from docx import Document
 from openai import OpenAI
 import os
 from datetime import datetime
+import re  # Import the regular expressions module
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
 Document the patient's responses and any additional relevant information, as a nurse would for a doctor to use.
@@ -183,6 +184,10 @@ def add_new_patient(fName, lName, email, appointment_datetime):
     }
     patients_collection.insert_one(new_patient)
 
+def is_valid_email(email):
+    # Simple regex pattern for validating an email
+    pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+    return re.match(pattern, email, re.I)  # re.I is for case-insensitive matching
 
 def display_patient_info():
     st.title("Breezy Portal")
@@ -196,18 +201,23 @@ def display_patient_info():
         appointment_date = st.date_input("Appointment Date")
         appointment_time = st.time_input("Appointment Time")
         
+        email_is_valid = is_valid_email(email)
+
         # Check if all required fields are filled out
         all_fields_filled = fName and lName and email  # This checks if all fields are non-empty
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
-            if not all_fields_filled:
-                st.warning("Please fill out all required fields.")
+            if not (fName and lName and email and email_is_valid):
+                if not email_is_valid:
+                    st.warning("Please enter a valid email address.")
+                else:
+                    st.warning("Please fill out all required fields.")
             else:
                 appointment_datetime = datetime.combine(appointment_date, appointment_time)
                 add_new_patient(fName, lName, email, appointment_datetime)
                 st.sidebar.success("Patient Added Successfully")
-                
+
     patients_df = fetch_patients()
     patients_df.sort_values(by='Date', inplace=True)
     patients_df['appointmentDate'] = patients_df['Date'].dt.date
