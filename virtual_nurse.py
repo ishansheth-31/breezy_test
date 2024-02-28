@@ -7,28 +7,24 @@ client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kx
 db = client.breezydata
 patients_collection = db.emfd
 
-def initialize_session_state():
-    if 'bot' not in st.session_state:
-        st.session_state.bot = MedicalChatbot()
-        st.session_state.chat_history = []
-        st.session_state.initial_questions = [
-            "Are you a new patient?",
-            "What is your name?",
-            "What is your height? (in feet and inches)",  # Adjusted for clarity
-            "What is your approximate weight in pounds?",
-            "Are you currently taking any medications?",
-            "Have you had any recent surgeries?",
-            "Do you have any known drug allergies?",
-            "Finally, what are you in for today?"
-        ]
-        st.session_state.initial_answers = {}
-        st.session_state.current_question_index = 0
+if 'bot' not in st.session_state:
+    st.session_state.bot = MedicalChatbot()
+    st.session_state.chat_history = []
+    st.session_state.initial_questions = [
+        "Are you a new patient?",
+        "What is your name?",
+        # Adjust the height question as per your new implementation
+        "What is your height? (Please provide feet and inches separately)",
+        "What is your approximate weight in pounds?",
+        "Are you currently taking any medications?",
+        "Have you had any recent surgeries?",
+        "Do you have any known drug allergies?",
+        "Finally, what are you in for today?"
+    ]
+    st.session_state.initial_answers = {}
+    st.session_state.current_question_index = 0
 
-# Call the initialization at the start of your script or within a conditional check
-# to ensure 'bot' is always available before being accessed.
-initialize_session_state()
-
-# Now you can safely access st.session_state.bot without encountering an AttributeError
+# Now, bot can be accessed directly since we're sure it's initialized
 bot = st.session_state.bot
 
 def store_full_assessment_in_mongodb(chat_history, patient_id):
