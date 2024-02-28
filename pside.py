@@ -1,3 +1,4 @@
+from io import BytesIO
 import streamlit as st
 import pandas as pd
 from pymongo import MongoClient
@@ -151,7 +152,10 @@ def generate_patient_assessment_report(patient_id):
 
 
 
-def download_report_as_word_document(basic_info, report_content, file_path='Patient_Assessment_Report.docx'):
+def download_report_as_word_document(first_name, last_name, basic_info, report_content):
+    file_name = f"{first_name}_{last_name}_Patient_Assessment_Report.docx"
+    file_path = os.path.join("downloads", file_name)  # Adjust path as necessary
+
     try:
         doc = Document()
         doc.add_heading('Patient Assessment Report', 0)
@@ -167,6 +171,7 @@ def download_report_as_word_document(basic_info, report_content, file_path='Pati
         doc.add_heading('Assessment', level=1)
         doc.add_paragraph(report_content)
 
+        # Save to a temporary directory or in-memory buffer
         doc.save(file_path)
         return file_path
     except Exception as e:
@@ -189,6 +194,22 @@ def is_valid_email(email):
     pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
     return re.match(pattern, email, re.I)  # re.I is for case-insensitive matching
 
+def generate_downloadable_docx(basic_info, report_content):
+    doc = Document()
+    doc.add_heading('Patient Assessment Report', 0)
+    for key, value in basic_info.items():
+        doc.add_paragraph(f"{key}: {value}")
+    doc.add_paragraph()
+    doc.add_heading('Assessment', level=1)
+    doc.add_paragraph(report_content)
+    
+    # Save the document to a BytesIO object
+    doc_io = BytesIO()
+    doc.save(doc_io)
+    doc_io.seek(0)
+    
+    return doc_io
+
 def display_patient_info():
     st.title("Breezy Portal")
 
@@ -199,7 +220,7 @@ def display_patient_info():
         lName = st.text_input("Last Name", "")
         email = st.text_input("Email", "")
         appointment_date = st.date_input("Appointment Date")
-        appointment_time = st.time_input("Appointment Time")
+        appointment_time = st.time_input("Appointment Time", value = None)
         
         email_is_valid = is_valid_email(email)
 
@@ -244,11 +265,17 @@ def display_patient_info():
                         st.error("Failed to send email.")
             
             if patient_status == "Completed":
-                if st.button("Generate and Download Report", key=f"generate_{patient['_id']}"):
-                    report_content, basic_info = generate_patient_assessment_report(patient["PatientID"])
-                    file_path = download_report_as_word_document(basic_info, report_content)
-                    st.success(f"Report generated: {file_path}")
-                    # Implementation for downloading the report file, like using Streamlit's download button    
+                report_content, basic_info = generate_patient_assessment_report(patient["PatientID"])
+                doc_io = generate_downloadable_docx(basic_info, report_content)
+    
+                # Create a dynamic filename
+                file_name = f"{basic_info['Name'].replace(' ', '_')}_Patient_Assessment_Report.docx"
+    
+                # Provide the download button
+                st.download_button(label="Download Report",
+                        data=doc_io,
+                        file_name=file_name,
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 def main():
     display_patient_info()
