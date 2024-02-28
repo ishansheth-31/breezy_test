@@ -113,7 +113,7 @@ def handle_initial_questions():
             inches_key = f"{input_key}_inches"
             min_value_feet = 0 if feet_key in question.lower() else 0
             min_value_inches = 0 if inches_key in question.lower() else 0
-            feet = st.number_input("Height in Feet/Inches: Feet", min_value=0, max_value=8, step=1, key=feet_key)
+            feet = st.number_input("Height in Feet/Inches: \n Feet", min_value=0, max_value=8, step=1, key=feet_key)
             inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=inches_key)
             user_response = f"{feet}' {inches}\""
             total_inches = feet * 12 + inches
