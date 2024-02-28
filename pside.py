@@ -9,6 +9,7 @@ from docx import Document
 from openai import OpenAI
 import os
 from datetime import datetime
+import re  # Import the regular expressions module
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
 Document the patient's responses and any additional relevant information, as a nurse would for a doctor to use.
@@ -68,13 +69,13 @@ def send_email(to_email, link):
     smtp_username = 'mainbreezy11@gmail.com'
     smtp_password = 'qgzp kaay irpm hqyq'
     from_email = smtp_username
-    subject = "Your Virtual Nurse Assessment"
+    subject = "Your Virtual Nurse Assessment for _____"
 
     msg = MIMEMultipart()
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"Hello! Welcome to Breezy with East Marietta Family Dentistry, please complete this link before your appointment today: {personalized_link}"
+    body = f"Hello! Welcome to Breezy. You will be conducting your patient assessment for ____. Please complete this before your appointed so your doctor can have detailed insights: {personalized_link}"
     msg.attach(MIMEText(body, 'plain'))
 
     try:
@@ -183,26 +184,39 @@ def add_new_patient(fName, lName, email, appointment_datetime):
     }
     patients_collection.insert_one(new_patient)
 
+def is_valid_email(email):
+    # Simple regex pattern for validating an email
+    pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+    return re.match(pattern, email, re.I)  # re.I is for case-insensitive matching
 
 def display_patient_info():
     st.title("Breezy Portal")
 
-        # Sidebar form for adding a new patient
-    # New Patient Form in Sidebar
+    # Sidebar form for adding a new patient
     with st.sidebar.form("new_patient_form"):
         st.write("Add New Patient")
-        fName = st.text_input("First Name")
-        lName = st.text_input("Last Name")
-        email = st.text_input("Email")
+        fName = st.text_input("First Name", "")
+        lName = st.text_input("Last Name", "")
+        email = st.text_input("Email", "")
         appointment_date = st.date_input("Appointment Date")
         appointment_time = st.time_input("Appointment Time")
-        st.write(appointment_time)
+        
+        email_is_valid = is_valid_email(email)
+
+        # Check if all required fields are filled out
+        all_fields_filled = fName and lName and email  # This checks if all fields are non-empty
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
-            appointment_datetime = datetime.combine(appointment_date, appointment_time)
-            add_new_patient(fName, lName, email, appointment_datetime)
-            st.sidebar.success("Patient Added Successfully")
+            if not (fName and lName and email and email_is_valid):
+                if not email_is_valid:
+                    st.warning("Please enter a valid email address.")
+                else:
+                    st.warning("Please fill out all required fields.")
+            else:
+                appointment_datetime = datetime.combine(appointment_date, appointment_time)
+                add_new_patient(fName, lName, email, appointment_datetime)
+                st.sidebar.success("Patient Added Successfully")
 
     patients_df = fetch_patients()
     patients_df.sort_values(by='Date', inplace=True)
