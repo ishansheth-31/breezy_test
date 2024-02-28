@@ -93,68 +93,47 @@ def handle_initial_questions():
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
         question = st.session_state['initial_questions'][st.session_state['current_question_index']]
         input_key = f"user_response_{st.session_state['current_question_index']}"
-        detail_input_key = f"detail_{input_key}"
 
-        user_response = None
-        user_detail_response = None
-        valid_response = False  # Track whether the response is valid
+        if question == "What is your approximate height in inches?":
+            # Special handling for height in feet and inches
+            feet_key = f"{input_key}_feet"
+            inches_key = f"{input_key}_inches"
+            feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=feet_key)
+            inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=inches_key)
+            submit_height = st.button("Submit Height", key=f"submit_{input_key}_height")
 
-        if question in ["Are you a new patient?", "Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
-            user_response = st.radio(question, ["Yes", "No"], key=input_key)
-            valid_response = True  # Radio buttons always have a valid response
-            if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
-                user_detail_response = st.text_input("Please elaborate", key=detail_input_key)
-                valid_response = user_detail_response.strip() != ""  # Validate elaboration is not empty
-        elif question == "What is your name?" or question == "Finally, what are you in for today?":
-            user_response = st.text_input(question, key=input_key)
-            valid_response = user_response.strip() != ""  # Validate name or reason is not empty
-        elif question in ["What is your approximate weight in pounds?"]:
-            min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
-            user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
-            valid_response = user_response >= min_value  # Validate height or weight is above minimum
-        elif question == "What is your approximate height in inches?":  # Adjust this question as needed
-            # We'll replace this question with two new inputs for feet and inches
-            st.session_state['initial_questions'][st.session_state['current_question_index']] = "What is your height?"
-            feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=f"{input_key}_feet")  # Assuming a reasonable max value
-            inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=f"{input_key}_inches")
-            
-            if st.button("Submit Height", key=f"submit_{input_key}_height"):
-                user_response = f"{feet} feet {inches} inches"
-                valid_response = True  # Since we control the inputs, this can always be true here
-
-                # Combine feet and inches into a single response for storage
+            if submit_height:
                 total_inches = feet * 12 + inches
-                st.session_state.initial_answers["Height"] = f"{total_inches} inches"  # Store as total inches or however you prefer
-
-                # Proceed to the next question
-                st.session_state['current_question_index'] += 1
-                st.experimental_rerun()
-
-        if st.button("Submit", key=f"submit_{input_key}"):
-            if valid_response:
-                st.session_state.chat_history.append(("Virtual Nurse", question))
+                user_response = f"{feet}' {inches}\""
+                st.session_state.initial_answers["Height"] = f"{total_inches} inches"
+                st.session_state.chat_history.append(("Virtual Nurse", "Height"))
                 st.session_state.chat_history.append(("You", user_response))
-                st.session_state.initial_answers[question] = user_response
-
-                # If elaboration is required, save the answer
-                if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
-                    elaboration_question = "Please elaborate"
-                    st.session_state.chat_history.append(("Virtual Nurse", elaboration_question))
-                    st.session_state.chat_history.append(("You", st.session_state.get(detail_input_key, "Not specified")))
-                    st.session_state.initial_answers[elaboration_question] = st.session_state.get(detail_input_key, "Not specified")
-
                 st.session_state['current_question_index'] += 1
 
-                # If the last initial question was just answered, automatically generate a follow-up question from the LLM
-                if question == "Finally, what are you in for today?":
-                    follow_up_question = bot.generate_response(user_response)
-                    st.session_state.chat_history.append(("Virtual Nurse", follow_up_question))
-                    st.session_state['message_counter'] = 0  # Reset message counter for the next part of the conversation
-
-                st.experimental_rerun()
+        else:
+            # General handling for other questions
+            if question in ["Are you a new patient?", "Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
+                options = ["Yes", "No"]
+                user_response = st.radio(question, options, key=input_key)
+            elif question == "What is your name?" or question == "Finally, what are you in for today?":
+                user_response = st.text_input(question, key=input_key)
+            elif question == "What is your approximate weight in pounds?":
+                user_response = st.number_input(question, min_value=1, format="%d", key=input_key)
             
-            else:
-                st.warning("Please provide a valid response.")
+            submit_other = st.button("Submit", key=f"submit_{input_key}")
+
+            if submit_other and user_response is not None:
+                st.session_state.initial_answers[question] = user_response
+                st.session_state.chat_history.append(("Virtual Nurse", question))
+                st.session_state.chat_history.append(("You", str(user_response)))
+                st.session_state['current_question_index'] += 1
+
+        # Rerun to update the page with the next question or any changes
+        if st.session_state['current_question_index'] >= len(st.session_state['initial_questions']):
+            st.session_state['current_question_index'] = len(st.session_state['initial_questions'])  # Prevent going beyond the list
+        else:
+            st.experimental_rerun()
+
 
 def extract_query_parameters():
     query_params = st.experimental_get_query_params()
