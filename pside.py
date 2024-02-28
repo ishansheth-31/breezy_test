@@ -5,15 +5,10 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import uuid4
-from gridfs import GridFS
-import base64
-from bson.binary import Binary
 from docx import Document
-from io import BytesIO
 from openai import OpenAI
 import os
 from datetime import datetime
-import pytz
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
 Document the patient's responses and any additional relevant information, as a nurse would for a doctor to use.
@@ -56,7 +51,9 @@ api_key = os.getenv('OPENAI_API_KEY')
 openai_client = OpenAI(api_key=api_key)
 
 # MongoDB setup
+mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
+
 db = client.breezydata
 patients_collection = db.emfd
 
@@ -77,7 +74,7 @@ def send_email(to_email, link):
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"Please complete your assessment using the following link: {personalized_link}"
+    body = f"Hello! Welcome to Breezy with East Marietta Family Dentistry, please complete this link before your appointment today: {personalized_link}"
     msg.attach(MIMEText(body, 'plain'))
 
     try:

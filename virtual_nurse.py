@@ -1,9 +1,7 @@
-import base64
 import streamlit as st
 from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
-from bson.binary import Binary
 
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
