@@ -190,7 +190,7 @@ st.title("Virtual Nurse Patient Assessment")
 url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduGT4U5l4/edit?usp=sharing"
 
 st.markdown("I consent to filling out this assessment. Click here to access our [document](%s) containing more information." % url)
-if st.checkbox(""):
+if st.checkbox("Click here to accept our consent document"):
     display_chat_history()
 
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
