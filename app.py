@@ -40,7 +40,7 @@ You should continue this portion for about 1-2 minutes in conversation to gather
 
 BE SURE TO ASK ONE QUESTION AT A TIME TO MAKE THE COLLECTION EXPERIENCE AND PATIENT EXPERIENCE MORE SMOOTH.
 
-**When you feel you have gathered all neccessary information, politely end the conversation with, "Thank you for your time, we'll see you in the office later today."**
+WHEN YOU FEEL YOU HAVE GATHERED ALL NECESSARY INFORMATION, POLITELY END THE CONVERSATION WITH, "Thank you for your time, we'll see you in the office later today."
 """
 
 
@@ -96,7 +96,7 @@ class MedicalChatbot:
         """
         Determine if the conversation should be ended based on the user's message.
         """
-        if "thank you for your time, we'll see you in the office later today." in message.lower():
+        if "we'll see you in the office later today." in message.lower():
             self.finished = True
 
 
