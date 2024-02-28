@@ -113,30 +113,31 @@ def handle_initial_questions():
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
             valid_response = user_response >= min_value  # Validate height or weight is above minimum
 
-        if st.button("Submit", key=f"submit_{input_key}") and valid_response:
-            st.session_state.chat_history.append(("Virtual Nurse", question))
-            st.session_state.chat_history.append(("You", user_response))
-            st.session_state.initial_answers[question] = user_response
+        if st.button("Submit", key=f"submit_{input_key}"):
+            if valid_response:
+                st.session_state.chat_history.append(("Virtual Nurse", question))
+                st.session_state.chat_history.append(("You", user_response))
+                st.session_state.initial_answers[question] = user_response
 
-            # If elaboration is required, save the answer
-            if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
-                elaboration_question = "Please elaborate"
-                st.session_state.chat_history.append(("Virtual Nurse", elaboration_question))
-                st.session_state.chat_history.append(("You", st.session_state.get(detail_input_key, "Not specified")))
-                st.session_state.initial_answers[elaboration_question] = st.session_state.get(detail_input_key, "Not specified")
+                # If elaboration is required, save the answer
+                if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
+                    elaboration_question = "Please elaborate"
+                    st.session_state.chat_history.append(("Virtual Nurse", elaboration_question))
+                    st.session_state.chat_history.append(("You", st.session_state.get(detail_input_key, "Not specified")))
+                    st.session_state.initial_answers[elaboration_question] = st.session_state.get(detail_input_key, "Not specified")
 
-            st.session_state['current_question_index'] += 1
+                st.session_state['current_question_index'] += 1
 
-            # If the last initial question was just answered, automatically generate a follow-up question from the LLM
-            if question == "Finally, what are you in for today?":
-                follow_up_question = bot.generate_response(user_response)
-                st.session_state.chat_history.append(("Virtual Nurse", follow_up_question))
-                st.session_state['message_counter'] = 0  # Reset message counter for the next part of the conversation
+                # If the last initial question was just answered, automatically generate a follow-up question from the LLM
+                if question == "Finally, what are you in for today?":
+                    follow_up_question = bot.generate_response(user_response)
+                    st.session_state.chat_history.append(("Virtual Nurse", follow_up_question))
+                    st.session_state['message_counter'] = 0  # Reset message counter for the next part of the conversation
 
-            st.experimental_rerun()
-        
-        elif st.button("Submit", key=f"submit_{input_key}") and not valid_response:
-            st.warning("Please provide a valid response.")
+                st.experimental_rerun()
+            
+            else:
+                st.warning("Please provide a valid response.")
 
 def extract_query_parameters():
     query_params = st.experimental_get_query_params()
