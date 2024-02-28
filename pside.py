@@ -187,23 +187,27 @@ def add_new_patient(fName, lName, email, appointment_datetime):
 def display_patient_info():
     st.title("Breezy Portal")
 
-        # Sidebar form for adding a new patient
-    # New Patient Form in Sidebar
+    # Sidebar form for adding a new patient
     with st.sidebar.form("new_patient_form"):
         st.write("Add New Patient")
-        fName = st.text_input("First Name")
-        lName = st.text_input("Last Name")
-        email = st.text_input("Email")
+        fName = st.text_input("First Name", "")
+        lName = st.text_input("Last Name", "")
+        email = st.text_input("Email", "")
         appointment_date = st.date_input("Appointment Date")
         appointment_time = st.time_input("Appointment Time")
-        st.write(appointment_time)
+        
+        # Check if all required fields are filled out
+        all_fields_filled = fName and lName and email  # This checks if all fields are non-empty
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
-            appointment_datetime = datetime.combine(appointment_date, appointment_time)
-            add_new_patient(fName, lName, email, appointment_datetime)
-            st.sidebar.success("Patient Added Successfully")
-
+            if not all_fields_filled:
+                st.warning("Please fill out all required fields.")
+            else:
+                appointment_datetime = datetime.combine(appointment_date, appointment_time)
+                add_new_patient(fName, lName, email, appointment_datetime)
+                st.sidebar.success("Patient Added Successfully")
+                
     patients_df = fetch_patients()
     patients_df.sort_values(by='Date', inplace=True)
     patients_df['appointmentDate'] = patients_df['Date'].dt.date

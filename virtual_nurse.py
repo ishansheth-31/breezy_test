@@ -95,20 +95,25 @@ def handle_initial_questions():
         input_key = f"user_response_{st.session_state['current_question_index']}"
         detail_input_key = f"detail_{input_key}"
 
-        # Initial response handling
         user_response = None
+        user_detail_response = None
+        valid_response = False  # Track whether the response is valid
+
         if question in ["Are you a new patient?", "Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
             user_response = st.radio(question, ["Yes", "No"], key=input_key)
+            valid_response = True  # Radio buttons always have a valid response
             if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
                 user_detail_response = st.text_input("Please elaborate", key=detail_input_key)
+                valid_response = user_detail_response.strip() != ""  # Validate elaboration is not empty
         elif question == "What is your name?" or question == "Finally, what are you in for today?":
             user_response = st.text_input(question, key=input_key)
+            valid_response = user_response.strip() != ""  # Validate name or reason is not empty
         elif question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
-            unit = "inches" if "height" in question.lower() else "pounds"
-            user_response = st.number_input(question, min_value=0, format="%d", key=input_key)
-            user_response = f"{user_response} {unit}"
+            min_value = 1 if "weight" in question.lower() else 24  # Example minimum values for height and weight
+            user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
+            valid_response = user_response >= min_value  # Validate height or weight is above minimum
 
-        if user_response is not None and st.button("Submit", key=f"submit_{input_key}"):
+        if st.button("Submit", key=f"submit_{input_key}") and valid_response:
             st.session_state.chat_history.append(("Virtual Nurse", question))
             st.session_state.chat_history.append(("You", user_response))
             st.session_state.initial_answers[question] = user_response
@@ -129,6 +134,9 @@ def handle_initial_questions():
                 st.session_state['message_counter'] = 0  # Reset message counter for the next part of the conversation
 
             st.experimental_rerun()
+        
+        elif st.button("Submit", key=f"submit_{input_key}") and not valid_response:
+            st.warning("Please provide a valid response.")
 
 def extract_query_parameters():
     query_params = st.experimental_get_query_params()
