@@ -69,13 +69,13 @@ def send_email(to_email, link):
     smtp_username = 'mainbreezy11@gmail.com'
     smtp_password = 'qgzp kaay irpm hqyq'
     from_email = smtp_username
-    subject = "Your Virtual Nurse Assessment"
+    subject = "Your Virtual Nurse Assessment for _____"
 
     msg = MIMEMultipart()
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"Hello! Welcome to Breezy with East Marietta Family Dentistry, please complete this link before your appointment today: {personalized_link}"
+    body = f"Hello! Welcome to Breezy. You will be conducting your patient assessment for ____. Please complete this before your appointed so your doctor can have detailed insights: {personalized_link}"
     msg.attach(MIMEText(body, 'plain'))
 
     try:
