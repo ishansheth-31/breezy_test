@@ -109,7 +109,7 @@ def handle_initial_questions():
             user_response = st.text_input(question, key=input_key)
             valid_response = user_response.strip() != ""  # Validate name or reason is not empty
         elif question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
-            min_value = 1 if "weight" in question.lower() else 24  # Example minimum values for height and weight
+            min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
             valid_response = user_response >= min_value  # Validate height or weight is above minimum
 
