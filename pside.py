@@ -90,6 +90,18 @@ def send_email(to_email, link):
         st.error(f"Failed to send email to {to_email}: {e}")
         return False
 
+def update_patient_status(patient_id, status):
+    # Function to update the patient's status in MongoDB
+    patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Status": status}})
+
+def check_and_update_patient_completion_status(patient_id):
+    # Function to check if the assessment is completed and update status accordingly
+    document = patients_collection.find_one({"PatientID": patient_id})
+    if document and document.get("Assessment"):
+        update_patient_status(patient_id, "Completed")
+        return "Completed"
+    return document.get("Status", "Not Sent")
+
 def fetch_patients():
     patients_list = list(patients_collection.find({}))
     patients_df = pd.DataFrame(patients_list)
@@ -184,6 +196,7 @@ def display_patient_info():
         email = st.text_input("Email")
         appointment_date = st.date_input("Appointment Date")
         appointment_time = st.time_input("Appointment Time")
+        st.write(appointment_time)
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
@@ -192,7 +205,6 @@ def display_patient_info():
             st.sidebar.success("Patient Added Successfully")
 
     patients_df = fetch_patients()
-
     patients_df.sort_values(by='Date', inplace=True)
     patients_df['appointmentDate'] = patients_df['Date'].dt.date
     min_date = patients_df['appointmentDate'].min()
@@ -206,9 +218,10 @@ def display_patient_info():
         appointment_time = patient['Date'].strftime('%I:%M %p')
         with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
             st.write(f"Email: {patient['Email']}")
-            st.write(f"Status: {patient['Status']}")
+            patient_status = check_and_update_patient_completion_status(patient["PatientID"])
+            st.write(f"Status: {patient_status}")
 
-            if patient['Status'] != "Sent":
+            if patient_status == "Not Sent":
                 link = "https://breezy.streamlit.app"
                 if st.button("Send Email", key=str(patient['_id'])):
                     if send_email(patient['Email'], link):
@@ -216,13 +229,12 @@ def display_patient_info():
                     else:
                         st.error("Failed to send email.")
             
-            if patient['Status'] == "Sent":
+            if patient_status == "Completed":
                 if st.button("Generate and Download Report", key=f"generate_{patient['_id']}"):
                     report_content, basic_info = generate_patient_assessment_report(patient["PatientID"])
                     file_path = download_report_as_word_document(basic_info, report_content)
                     st.success(f"Report generated: {file_path}")
-                    # You may provide a direct link for downloading or use Streamlit's download button feature
-
+                    # Implementation for downloading the report file, like using Streamlit's download button    
 
 def main():
     display_patient_info()
