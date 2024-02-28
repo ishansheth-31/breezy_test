@@ -111,11 +111,13 @@ def handle_initial_questions():
         elif question == "What is your approximate height in inches?":
             feet_key = f"{input_key}_feet"
             inches_key = f"{input_key}_inches"
+            min_value_feet = 0 if feet_key in question.lower() else 0
+            min_value_inches = 0 if inches_key in question.lower() else 0
             feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=feet_key)
             inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=inches_key)
             user_response = f"{feet}' {inches}\""
             total_inches = feet * 12 + inches
-            valid_response = user_response >= min_value 
+            valid_response = feet >= min_value_feet and inches >= min_value_inches
             # if submit_height:
             #     st.session_state.initial_answers["Height"] = f"{total_inches} inches"
             #     st.session_state.chat_history.append(("Virtual Nurse", "Height"))
