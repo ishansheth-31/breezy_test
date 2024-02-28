@@ -108,10 +108,27 @@ def handle_initial_questions():
         elif question == "What is your name?" or question == "Finally, what are you in for today?":
             user_response = st.text_input(question, key=input_key)
             valid_response = user_response.strip() != ""  # Validate name or reason is not empty
-        elif question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
+        elif question in ["What is your approximate weight in pounds?"]:
             min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
             valid_response = user_response >= min_value  # Validate height or weight is above minimum
+        elif question == "What is your approximate height in inches?":  # Adjust this question as needed
+            # We'll replace this question with two new inputs for feet and inches
+            st.session_state['initial_questions'][st.session_state['current_question_index']] = "What is your height?"
+            feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=f"{input_key}_feet")  # Assuming a reasonable max value
+            inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=f"{input_key}_inches")
+            
+            if st.button("Submit Height", key=f"submit_{input_key}_height"):
+                user_response = f"{feet} feet {inches} inches"
+                valid_response = True  # Since we control the inputs, this can always be true here
+
+                # Combine feet and inches into a single response for storage
+                total_inches = feet * 12 + inches
+                st.session_state.initial_answers["Height"] = f"{total_inches} inches"  # Store as total inches or however you prefer
+
+                # Proceed to the next question
+                st.session_state['current_question_index'] += 1
+                st.experimental_rerun()
 
         if st.button("Submit", key=f"submit_{input_key}"):
             if valid_response:
