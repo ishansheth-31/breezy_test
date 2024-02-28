@@ -1,9 +1,18 @@
 from openai import OpenAI
 from docx import Document
+from elevenlabs import generate, play
+import sounddevice as sd
+from scipy.io.wavfile import write
+import numpy as np
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import time
+from gtts import gTTS
+import playsound  # You may need to install this package
+import tempfile
 import os
-
-api_key = os.getenv('OPENAI_API_KEY')
-
+#noapi_key = os.getenv('OPENAI_API_KEY')
+api_key = "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"
 # Initialize OpenAI client with your API key
 client = OpenAI(api_key=api_key)
 
@@ -39,6 +48,8 @@ Make sure to sure to ask about related symptoms. For example, if you have a sore
 You should continue this portion for about 1-2 minutes in conversation to gather enough information for a report.
 
 Please be sure to ask ONE question at a time to make the collection experience and patient experience more smooth.
+
+**When you feel you have gathered all neccessary information, politely end the conversation with, "Thank you for your time, we'll see you in the office later today."**
 """
 
 
@@ -108,7 +119,7 @@ class MedicalChatbot:
         """
         Determine if the conversation should be ended based on the user's message.
         """
-        if "end" in message.lower():
+        if "thank you for your time, we'll see you in the office later today." in message.lower():
             self.finished = True
 
     def update_patient_info(self, category, content):
@@ -206,7 +217,93 @@ Here is the chat history to base this off of below: \n"""
         except Exception as e:
             return f"An error occurred: {str(e)}"
 
-def main():
+
+
+
+def listen(filename="output.wav", duration=5, fs=44100, threshold=0.001):
+    """
+    Listens to the microphone and records audio to `filename` until there is silence or a duration of `duration` seconds has passed.
+    The audio is recorded at a sampling rate of `fs` and a silence threshold of `threshold`.
+    """
+    # Function to detect if the current audio block is silent based on a threshold.
+    def is_silent(data, threshold):
+        return np.abs(data).mean() < threshold
+
+    # Start recording
+    print("Listening...")
+    audio_data = sd.rec(int(duration * fs), samplerate=fs, channels=1)
+    sd.wait()
+
+    # Check if the last block is silent
+    if is_silent(audio_data[-int(fs*0.5):], threshold):
+        print("Silence detected, stopping recording.")
+        # Truncate silence from the end
+        time.sleep(2)
+        # audio_data = audio_data[:np.where(is_silent(audio_data[::-1], threshold))[0][0]]
+        silent_indices = np.where(is_silent(audio_data[::-1], threshold))[0]
+        if silent_indices.size > 0:
+            audio_data = audio_data[:-silent_indices[0]]
+        else:
+            print("No silence detected at the end of the recording.")
+    # Save the recorded audio to a file
+    write(filename, fs, audio_data)
+    print(f"Recording saved to {filename}")
+    return filename
+
+# Transcribe the audio file using Whisper
+def transcribe(audio_file_path):
+    import whisper
+
+    model = whisper.load_model("base")
+    result = model.transcribe(audio_file_path)
+    print(result["text"])
+    return result["text"]
+
+
+
+# def speak(text):
+#     # Replace 'YOUR_VOICE_ID' with the ID of the voice you want to use
+#     # Replace 'YOUR_MODEL_ID' with the model ID you want to use, e.g., 'eleven_multilingual_v2'
+#     audio = generate(
+#       text=text,
+#       api_key="6104e4b41da69ccbacd868756ce88acb",
+#       voice="Rachel",
+#       model="eleven_turbo_v2"
+#     )
+#     play(audio)no
+
+
+def speak(text):
+    # Generate speech using gTTS
+    tts = gTTS(text=text, lang='en')  # gTTS doesn't use voice ID or model ID like the original function
+    
+    # Save the generated speech to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as fp:
+        temp_file = fp.name
+        tts.save(temp_file)
+    
+    # Play the speech
+    playsound.playsound(temp_file)
+    
+    # Remove the temporary file
+    os.remove(temp_file)
+
+executor = ThreadPoolExecutor()
+
+async def async_listen(filename="output.wav", duration=5):
+    loop = asyncio.get_running_loop()
+    # Run the synchronous listen function in a separate thread
+    audio_file = await loop.run_in_executor(executor, listen, filename, duration)
+    return audio_file
+
+async def async_transcribe(audio_file_path):
+    loop = asyncio.get_running_loop()
+    # Run the synchronous transcribe function in a separate thread
+    text = await loop.run_in_executor(executor, transcribe, audio_file_path)
+    return text
+
+
+async def main():
     print("Hello, I'm your virtual nurse assistant. Let's start with some basic questions.")
     bot = MedicalChatbot()
     last_initial_answer = bot.handle_initial_questions()  # Collect answers and get the last answer
@@ -214,18 +311,27 @@ def main():
     # Directly use the last initial answer to start the LLM-based probing
     if last_initial_answer:
         response = bot.generate_response(last_initial_answer)
+        speak(response)
         print("Virtual Nurse:", response)
 
     while not bot.finished:
-        user_input = input("You: ")
+        #user_input = input("You: ")
+        audio_file = await async_listen()  # This will start recording
+        user_input = await async_transcribe(audio_file)
         response = bot.generate_response(user_input)
+        speak(response)
         print("Virtual Nurse:", response)
-        bot.should_stop(user_input)
+        bot.should_stop(response)
 
     if bot.finished:
         report_content = bot.create_report().choices[0].message.content  # Assuming create_report returns a response object
         file_path = bot.extract_and_save_report(report_content)
         print(f"Report saved to: {file_path}")
 
+
+# Run the main async function
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
+
+# if __name__ == "__main__":
+#     main()
