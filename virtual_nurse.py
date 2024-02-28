@@ -2,10 +2,13 @@ import streamlit as st
 from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
+import os
 
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 db = client.breezydata
 patients_collection = db.emfd
+
+bot = MedicalChatbot()
 
 def initialize_session_state():
     if 'bot' not in st.session_state:
@@ -27,7 +30,7 @@ def initialize_session_state():
 initialize_session_state()
 
 # Now you can safely access st.session_state.bot without encountering an AttributeError
-bot = st.session_state.bot
+ #bot = st.session_state.bot
 
 def store_full_assessment_in_mongodb(chat_history, patient_id):
     # Extract answers from initial_questions and map them to the database columns
@@ -78,7 +81,7 @@ if 'bot' not in st.session_state:
     st.session_state['initial_answers'] = {}
     st.session_state['current_question_index'] = 0
 
-bot = st.session_state.bot
+#bot = st.session_state.bot
 
 def display_chat_history():
     chat_container = st.container()
