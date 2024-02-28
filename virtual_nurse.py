@@ -113,14 +113,14 @@ def handle_initial_questions():
             inches_key = f"{input_key}_inches"
             feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=feet_key)
             inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=inches_key)
-            submit_height = st.button("Submit Height", key=f"submit_{input_key}_height")
-            if submit_height:
-                total_inches = feet * 12 + inches
-                user_response = f"{feet}' {inches}\""
-                st.session_state.initial_answers["Height"] = f"{total_inches} inches"
-                st.session_state.chat_history.append(("Virtual Nurse", "Height"))
-                st.session_state.chat_history.append(("You", user_response))
-                st.session_state['current_question_index'] += 1
+            user_response = f"{feet}' {inches}\""
+            total_inches = feet * 12 + inches
+            valid_response = user_response >= min_value 
+            # if submit_height:
+            #     st.session_state.initial_answers["Height"] = f"{total_inches} inches"
+            #     st.session_state.chat_history.append(("Virtual Nurse", "Height"))
+            #     st.session_state.chat_history.append(("You", user_response))
+            #     st.session_state['current_question_index'] += 1
         elif question in ["What is your approximate weight in pounds?"]:
             min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
