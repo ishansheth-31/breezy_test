@@ -108,7 +108,17 @@ def handle_initial_questions():
         elif question == "What is your name?" or question == "Finally, what are you in for today?":
             user_response = st.text_input(question, key=input_key)
             valid_response = user_response.strip() != ""  # Validate name or reason is not empty
-        elif question in ["What is your approximate height in inches?", "What is your approximate weight in pounds?"]:
+        elif question == "What is your approximate height in inches?":
+            feet_key = f"{input_key}_feet"
+            inches_key = f"{input_key}_inches"
+            min_value_feet = 0 if feet_key in question.lower() else 0
+            min_value_inches = 0 if inches_key in question.lower() else 0
+            feet = st.number_input("Feet", min_value=0, max_value=8, step=1, key=feet_key)
+            inches = st.number_input("Inches", min_value=0, max_value=11, step=1, key=inches_key)
+            user_response = f"{feet}' {inches}\""
+            total_inches = feet * 12 + inches
+            valid_response = feet >= min_value_feet and inches >= min_value_inches
+        elif question in ["What is your approximate weight in pounds?"]:
             min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
             valid_response = user_response >= min_value  # Validate height or weight is above minimum
