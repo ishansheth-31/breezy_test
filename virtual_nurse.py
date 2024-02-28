@@ -187,7 +187,10 @@ def handle_chat_after_initial_questions():
 
 st.title("Virtual Nurse Patient Assessment")
 
-if st.checkbox("I consent to filling out this assessment?"):
+url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduGT4U5l4/edit?usp=sharing"
+link_text = "Click here to access the document for more information."
+
+if st.checkbox("I consent to filling out this assessment. " + f"[{link_text}]({url})", unsafe_allow_html = True):
     display_chat_history()
 
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
