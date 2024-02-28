@@ -172,8 +172,8 @@ else:
 
 patient_id = extract_query_parameters()
 
-if st.button("Finish Conversation"):
-    bot.finished = True
+
+if bot.finished == True:
     full_chat_history = st.session_state.chat_history
     
     patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly

@@ -38,7 +38,9 @@ Make sure to sure to ask about related symptoms. For example, if you have a sore
 
 You should continue this portion for about 1-2 minutes in conversation to gather enough information for a report.
 
-Please be sure to ask ONE question at a time to make the collection experience and patient experience more smooth.
+BE SURE TO ASK ONE QUESTION AT A TIME TO MAKE THE COLLECTION EXPERIENCE AND PATIENT EXPERIENCE MORE SMOOTH.
+
+**When you feel you have gathered all neccessary information, politely end the conversation with, "Thank you for your time, we'll see you in the office later today."**
 """
 
 
@@ -89,6 +91,13 @@ class MedicalChatbot:
 
         # The 'Subjective' part will be updated in create_report or extract_and_save_report
         return last_answer
+    
+    def should_stop(self, message):
+        """
+        Determine if the conversation should be ended based on the user's message.
+        """
+        if "thank you for your time, we'll see you in the office later today." in message.lower():
+            self.finished = True
 
 
     def generate_response(self, message):
@@ -220,7 +229,8 @@ def main():
         user_input = input("You: ")
         response = bot.generate_response(user_input)
         print("Virtual Nurse:", response)
-        bot.should_stop(user_input)
+        bot.should_stop(response)
+
 
     if bot.finished:
         report_content = bot.create_report().choices[0].message.content  # Assuming create_report returns a response object
