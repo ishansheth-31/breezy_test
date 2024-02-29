@@ -114,7 +114,7 @@ def send_email(to_email, link, patients_collection, fname, practice_name):
 
     Welcome to Breezy. You will be conducting your patient assessment at {practice_name} so we can understand your reason for visiting in advance.
 
-    Please complete your [assessment](%s) before your appointment.
+    Please complete your [assessment] %s before your appointment.
 
     We look forward to seeing you soon!
     {practice_name}
@@ -320,6 +320,7 @@ def display_patient_data(patients_collection):
                         if st.button("Send Email", key=str(patient['_id'])):
                             if send_email(patient['Email'], link, patients_collection, patient["fName"], patients_collection["Name"]):
                                 st.success(f"Email sent to {patient['Email']}")
+                                st.experimental_rerun()
                             else:
                                 st.error("Failed to send email.")
 
