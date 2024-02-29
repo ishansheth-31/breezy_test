@@ -37,7 +37,6 @@ Analysis:
 - The symptoms suggest a potential joint issue in the left shoulder, possibly related to exercise. 
 - The clicking sound during movement may indicate a ligament or tendon problem.
 Plan: 
-- Recommend patient to consult a healthcare provider for a physical examination. 
 - Possible imaging tests or referral to physical therapy may be considered based on the assessment.
 Implementation:
 - Advised the patient on the importance of consulting a healthcare provider
@@ -68,19 +67,22 @@ def login_form():
         email = st.text_input("Email", key="login_email")
         password = st.text_input("Password", type="password", key="login_password")
         submit_button = st.form_submit_button("Login")
-        if submit_button:
-            return email, password
-    return None, None
+        return submit_button, email, password
 
 def validate_credentials(email, password):
     user_doc = accounts_collection.find_one({"Email": email, "Password": password})
     if user_doc:
+        # Retrieve the patients collection for the logged-in user
         db_test = user_doc["Collection"]
-        patients_collection = db[db_test]  # Retrieve the patients collection
-        return patients_collection  # Return True and the collection if successful
+        patients_collection = db[db_test]
+        st.session_state['logged_in'] = True
+        st.session_state['patients_collection'] = patients_collection
+        st.session_state['user_email'] = email  # Store the user's email in session state for easy access
+        return patients_collection
     else:
-        st.error("Failed to access patient data.")
-        return None  # Return False and None if not successful
+        st.error("Invalid email or password. Please try again.")
+        return None
+
 
 
 def display_main_content(email, password):
@@ -205,6 +207,8 @@ def add_new_patient(fName, lName, email, appointment_datetime, patients_collecti
         "Assessment": ""
     }
     patients_collection.insert_one(new_patient)
+    st.experimental_rerun()  # Rerun the app to reflect the update immediately
+
 
 def is_valid_email(email):
     # Simple regex pattern for validating an email
@@ -229,21 +233,26 @@ def generate_downloadable_docx(patient_id, patients_collection):
     return basic_info, doc_io
 
 def display_patient_info():
-    if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
-        st.session_state['logged_in'] = False
-        email, password = login_form()
-        if email and password:
-            patients_collection = validate_credentials(email, password)
-            if patients_collection != False:
-                st.session_state['logged_in'] = True
-                st.session_state['patients_collection'] = patients_collection
-                # Once logged in, display patient info here
-                display_patient_data(patients_collection)
+    if not st.session_state.get('logged_in', False):
+        submit_button, email, password = login_form()
+        if submit_button:
+            if validate_credentials(email, password) is not None:
+                display_patient_data(st.session_state['patients_collection'])
             else:
-                st.error("Invalid email or password. Please try again.")
+                st.error("Login failed. Please check your credentials and try again.")
     else:
-        # If already logged in, directly display patient info
+        # Directly display patient data if already logged in
         display_patient_data(st.session_state['patients_collection'])
+        
+        # Logout button at the bottom of the sidebar
+        with st.sidebar:
+            st.write("")  # Add some space
+            if st.button("Logout"):
+                # Clear session state
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.experimental_rerun()
+
 
 def display_patient_data(patients_collection):
     st.title("Breezy Portal")
@@ -257,7 +266,7 @@ def display_patient_data(patients_collection):
         lName = st.text_input("Last Name", "")
         email = st.text_input("Email", "")
         appointment_date = st.date_input("Appointment Date")
-        appointment_time = st.time_input("Appointment Time", value=None)
+        appointment_time = st.time_input("Appointment Time")
 
         email_is_valid = is_valid_email(email)
         submit_button = st.form_submit_button("Submit")
