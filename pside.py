@@ -270,6 +270,7 @@ def display_patient_info():
 
 def display_patient_data(patients_collection):
     st.title("Breezy Portal")
+    st.write("Be sure to press the 'R' key to refresh the page whenever a patient has completed their assessment. This way you can download it.")
 
     patients_df = fetch_patients(patients_collection)
 
