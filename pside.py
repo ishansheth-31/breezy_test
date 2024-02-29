@@ -93,7 +93,6 @@ def display_main_content(email, password):
 
 
 def send_email(to_email, link, patients_collection, fname, practice_name):
-
     patient_id = str(uuid4())
     # Modify the link to include the patient ID as a query parameter
     personalized_link = f"{link}?patient_id={patient_id}"
@@ -105,21 +104,26 @@ def send_email(to_email, link, patients_collection, fname, practice_name):
     from_email = smtp_username
     subject = "Your Virtual Nurse Assessment"
 
-    msg = MIMEMultipart()
+    # HTML email body
+    body = f"""
+    <html>
+        <body>
+            <p>Hello {fname},</p>
+            <p>Welcome to Breezy. You will be conducting your patient assessment at {practice_name} so we can understand your reason for visiting in advance.</p>
+            <p>Please complete your <a href="{personalized_link}">assessment</a> before your appointment.</p>
+            <p>We look forward to seeing you soon!<br>
+            {practice_name}</p>
+        </body>
+    </html>
+    """
+    
+    msg = MIMEMultipart("alternative")
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"""
-    Hello {fname},
-
-    Welcome to Breezy. You will be conducting your patient assessment at {practice_name} so we can understand your reason for visiting in advance.
-
-    Please complete your [assessment] %s before your appointment.
-
-    We look forward to seeing you soon!
-    {practice_name}
-    """ % personalized_link
-    msg.attach(MIMEText(body, 'plain'))
+    
+    # Attach the HTML version
+    msg.attach(MIMEText(body, 'html'))
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -133,6 +137,7 @@ def send_email(to_email, link, patients_collection, fname, practice_name):
     except Exception as e:
         st.error(f"Failed to send email to {to_email}: {e}")
         return False
+
 
 def update_patient_status(patient_id, status, patients_collection):
     # Function to update the patient's status in MongoDB
