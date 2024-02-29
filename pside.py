@@ -53,7 +53,6 @@ openai_client = OpenAI(api_key=api_key)
 
 # MongoDB setup
 mongo_key = os.getenv('MONGO_KEY')
-# client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 client = MongoClient(mongo_key)
 
 db = client.breezydata
