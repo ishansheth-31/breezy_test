@@ -117,9 +117,7 @@ class MedicalChatbot:
 
 
     def generate_response(self, message):
-        """
-        Generate a response to the user's message using the OpenAI API.
-        """
+        # Generate a response to the user's message using the OpenAI API.
         self.context.append({'role': 'user', 'content': message})
         response = client.chat.completions.create(
             model="gpt-4",
@@ -127,7 +125,12 @@ class MedicalChatbot:
         )
         assistant_message = response.choices[0].message.content
         self.context.append({'role': 'assistant', 'content': assistant_message})
+        
+        # Check if the conversation should be ended
+        self.should_stop(assistant_message)
+        
         return assistant_message
+
 
     def update_patient_info(self, category, content):
         """

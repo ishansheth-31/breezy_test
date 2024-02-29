@@ -176,16 +176,17 @@ def handle_chat_after_initial_questions():
     # Trigger the bot's response when the user message is submitted
     if st.button("Send", key=f"send_{user_message_key}") and user_message:
         response = bot.generate_response(user_message)
-        # Append both the user message and the bot's response to the chat history
-        # This ensures both are displayed immediately after the user hits "Send"
         st.session_state.chat_history.append(("You", user_message))
         st.session_state.chat_history.append(("Virtual Nurse", response))
         
-        # Increment the message counter for the next message
-        st.session_state['message_counter'] += 1
+        if bot.finished:
+            # Perform actions needed to conclude the conversation, e.g., display a message, save conversation
+            st.session_state['conversation_ended'] = True  # You can use a flag like this to control UI components based on the conversation state
+        else:
+            st.session_state['message_counter'] += 1
         
-        # Force Streamlit to rerun the script to reflect the updated chat history
         st.experimental_rerun()
+
 
 
 st.title("Virtual Nurse Patient Assessment")
