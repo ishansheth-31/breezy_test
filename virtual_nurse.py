@@ -184,10 +184,6 @@ def handle_chat_after_initial_questions():
                 st.experimental_rerun()
 
             st.session_state['message_counter'] += 1
-    else:
-        # Here you can add any logic that should happen after the conversation is over,
-        # For example, displaying a message that the conversation has ended.
-        st.write("Thank you for your time, we'll see you in the office later today.")
 
 
 
