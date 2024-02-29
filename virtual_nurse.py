@@ -27,10 +27,16 @@ def initialize_session_state():
         st.session_state['initial_answers'] = {}
         st.session_state['current_question_index'] = 0
 
+# Ensure initialization happens early in the app's execution
 initialize_session_state()
 
-# Now you can safely access st.session_state.bot without encountering an AttributeError
-bot = st.session_state.bot
+# Now, you can safely access st.session_state.bot without encountering an AttributeError
+if 'bot' in st.session_state:
+    bot = st.session_state.bot
+    # Proceed with the rest of your app logic here
+else:
+    st.error("Session state is not initialized correctly.")
+
 
 def store_full_assessment_in_mongodb(chat_history, patient_id, patients_collection):
     # Extract answers from initial_questions and map them to the database columns
