@@ -57,9 +57,40 @@ mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
 
 db = client.breezydata
-patients_collection = db.emfd
+accounts_collection = db.Accounts
 
-def send_email(to_email, link):
+
+import streamlit as st
+
+def login_form():
+    with st.form("login_form"):
+        st.title("Physician Login")
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+        submit_button = st.form_submit_button("Login")
+        if submit_button:
+            return email, password
+    return None, None
+
+def validate_credentials(email, password):
+    user_doc = accounts_collection.find_one({"Email": email, "Password": password})
+    if user_doc:
+        db_test = user_doc["Collection"]
+        patients_collection = db[db_test]  # Retrieve the patients collection
+        return patients_collection  # Return True and the collection if successful
+    else:
+        st.error("Failed to access patient data.")
+        return None  # Return False and None if not successful
+
+
+def display_main_content(email, password):
+    if validate_credentials(email, password):
+        display_patient_info()  # Adjust if this function also needs the collection passed as an argument
+    else:
+        st.error("Failed to access patient data.")
+
+
+def send_email(to_email, link, patients_collection):
 
     patient_id = str(uuid4())
     # Modify the link to include the patient ID as a query parameter
@@ -70,13 +101,13 @@ def send_email(to_email, link):
     smtp_username = 'mainbreezy11@gmail.com'
     smtp_password = 'qgzp kaay irpm hqyq'
     from_email = smtp_username
-    subject = "Your Virtual Nurse Assessment for _____"
+    subject = "Your Virtual Nurse Assessment"
 
     msg = MIMEMultipart()
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"Hello! Welcome to Breezy. You will be conducting your patient assessment for ____. Please complete this before your appointed so your doctor can have detailed insights: {personalized_link}"
+    body = f"Hello! Welcome to Breezy. You will be conducting your patient assessment. Please complete this before your appointed so your doctor can have detailed insights: {personalized_link}"
     msg.attach(MIMEText(body, 'plain'))
 
     try:
@@ -92,25 +123,39 @@ def send_email(to_email, link):
         st.error(f"Failed to send email to {to_email}: {e}")
         return False
 
-def update_patient_status(patient_id, status):
+def update_patient_status(patient_id, status, patients_collection):
     # Function to update the patient's status in MongoDB
     patients_collection.update_one({"PatientID": patient_id}, {"$set": {"Status": status}})
 
-def check_and_update_patient_completion_status(patient_id):
+def check_and_update_patient_completion_status(patient_id, patients_collection):
     # Function to check if the assessment is completed and update status accordingly
     document = patients_collection.find_one({"PatientID": patient_id})
     if document and document.get("Assessment"):
-        update_patient_status(patient_id, "Completed")
+        update_patient_status(patient_id, "Completed", patients_collection)
         return "Completed"
     return document.get("Status", "Not Sent")
 
-def fetch_patients():
-    patients_list = list(patients_collection.find({}))
+def fetch_patients(patients_collection):
+    patients_list = list(patients_collection.find())
+    # Convert to DataFrame
     patients_df = pd.DataFrame(patients_list)
-    patients_df['Date'] = pd.to_datetime(patients_df['Date'])
+    
+    # Check if 'Date' column exists
+    if 'Date' in patients_df.columns:
+        patients_df['Date'] = pd.to_datetime(patients_df['Date'])
+    else:
+        # Handle case where 'Date' does not exist
+        # Option 1: Set a default date
+        patients_df['Date'] = pd.to_datetime('1-31-2004')
+        
+        # Option 2: Drop rows without 'Date' or handle it according to your logic
+        # For this example, we'll print a message and return an empty DataFrame
+        return pd.DataFrame()  # Return an empty DataFrame or handle as needed
+    
     return patients_df
 
-def generate_patient_assessment_report(patient_id):
+
+def generate_patient_assessment_report(patient_id, patients_collection):
     document = patients_collection.find_one({"PatientID": patient_id})
     if not document:
         return "No document found with PatientID: " + patient_id
@@ -136,7 +181,6 @@ def generate_patient_assessment_report(patient_id):
 
     # Build the prompt for the report
     prompt = f"{new_prompt}\n\n{formatted_chat_history}"
-    print(prompt)
 
     try:
         # Assuming 'response' is the variable holding the response from the OpenAI API call
@@ -150,34 +194,7 @@ def generate_patient_assessment_report(patient_id):
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
-
-
-def download_report_as_word_document(first_name, last_name, basic_info, report_content):
-    file_name = f"{first_name}_{last_name}_Patient_Assessment_Report.docx"
-    file_path = os.path.join("downloads", file_name)  # Adjust path as necessary
-
-    try:
-        doc = Document()
-        doc.add_heading('Patient Assessment Report', 0)
-
-        # Add basic information
-        doc.add_heading('Patient Information', level=1)
-        for key, value in basic_info.items():
-            doc.add_paragraph(f"{key}: {value}")
-
-        doc.add_paragraph()  # Add a space between sections
-
-        # Add the generated report content
-        doc.add_heading('Assessment', level=1)
-        doc.add_paragraph(report_content)
-
-        # Save to a temporary directory or in-memory buffer
-        doc.save(file_path)
-        return file_path
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-
-def add_new_patient(fName, lName, email, appointment_datetime):
+def add_new_patient(fName, lName, email, appointment_datetime, patients_collection):
     new_patient = {
         "fName": fName,
         "lName": lName,
@@ -194,7 +211,8 @@ def is_valid_email(email):
     pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
     return re.match(pattern, email, re.I)  # re.I is for case-insensitive matching
 
-def generate_downloadable_docx(basic_info, report_content):
+def generate_downloadable_docx(patient_id, patients_collection):
+    report_content, basic_info = generate_patient_assessment_report(patient_id, patients_collection)
     doc = Document()
     doc.add_heading('Patient Assessment Report', 0)
     for key, value in basic_info.items():
@@ -208,10 +226,29 @@ def generate_downloadable_docx(basic_info, report_content):
     doc.save(doc_io)
     doc_io.seek(0)
     
-    return doc_io
+    return basic_info, doc_io
 
 def display_patient_info():
+    if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
+        st.session_state['logged_in'] = False
+        email, password = login_form()
+        if email and password:
+            patients_collection = validate_credentials(email, password)
+            if patients_collection != False:
+                st.session_state['logged_in'] = True
+                st.session_state['patients_collection'] = patients_collection
+                # Once logged in, display patient info here
+                display_patient_data(patients_collection)
+            else:
+                st.error("Invalid email or password. Please try again.")
+    else:
+        # If already logged in, directly display patient info
+        display_patient_data(st.session_state['patients_collection'])
+
+def display_patient_data(patients_collection):
     st.title("Breezy Portal")
+
+    patients_df = fetch_patients(patients_collection)
 
     # Sidebar form for adding a new patient
     with st.sidebar.form("new_patient_form"):
@@ -220,12 +257,9 @@ def display_patient_info():
         lName = st.text_input("Last Name", "")
         email = st.text_input("Email", "")
         appointment_date = st.date_input("Appointment Date")
-        appointment_time = st.time_input("Appointment Time", value = None)
-        
-        email_is_valid = is_valid_email(email)
+        appointment_time = st.time_input("Appointment Time", value=None)
 
-        # Check if all required fields are filled out
-        all_fields_filled = fName and lName and email  # This checks if all fields are non-empty
+        email_is_valid = is_valid_email(email)
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
@@ -236,46 +270,61 @@ def display_patient_info():
                     st.warning("Please fill out all required fields.")
             else:
                 appointment_datetime = datetime.combine(appointment_date, appointment_time)
-                add_new_patient(fName, lName, email, appointment_datetime)
+                add_new_patient(fName, lName, email, appointment_datetime, patients_collection)
                 st.sidebar.success("Patient Added Successfully")
 
-    patients_df = fetch_patients()
-    patients_df.sort_values(by='Date', inplace=True)
-    patients_df['appointmentDate'] = patients_df['Date'].dt.date
-    min_date = patients_df['appointmentDate'].min()
-    max_date = patients_df['appointmentDate'].max()
+    # Check if DataFrame is not empty and 'Date' column exists
+    if not patients_df.empty:
+        if 'Date' in patients_df.columns:
+            patients_df['Date'] = pd.to_datetime(patients_df['Date'], errors='coerce')  # Ensure conversion
+            patients_df.dropna(subset=['Date'], inplace=True)  # Drop rows with invalid 'Date'
+            patients_df.sort_values(by='Date', inplace=True)
 
-    selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
-    
-    selected_patients = patients_df[patients_df['appointmentDate'] == selected_date]
-    
-    for _, patient in selected_patients.iterrows():
-        appointment_time = patient['Date'].strftime('%I:%M %p')
-        with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
-            st.write(f"Email: {patient['Email']}")
-            patient_status = check_and_update_patient_completion_status(patient["PatientID"])
-            st.write(f"Status: {patient_status}")
+            patients_df['appointmentDate'] = patients_df['Date'].dt.date
+            min_date = patients_df['appointmentDate'].min()
+            max_date = patients_df['appointmentDate'].max()
 
-            if patient_status == "Not Sent":
-                link = "https://breezy.streamlit.app"
-                if st.button("Send Email", key=str(patient['_id'])):
-                    if send_email(patient['Email'], link):
-                        st.success(f"Email sent to {patient['Email']}")
-                    else:
-                        st.error("Failed to send email.")
-            
-            if patient_status == "Completed":
-                report_content, basic_info = generate_patient_assessment_report(patient["PatientID"])
-                doc_io = generate_downloadable_docx(basic_info, report_content)
-    
-                # Create a dynamic filename
-                file_name = f"{basic_info['Name'].replace(' ', '_')}_Patient_Assessment_Report.docx"
-    
-                # Provide the download button
-                st.download_button(label="Download Report",
-                        data=doc_io,
-                        file_name=file_name,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+            selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
+
+            selected_patients = patients_df[patients_df['appointmentDate'] == selected_date]
+
+            for _, patient in selected_patients.iterrows():
+                appointment_time = patient['Date'].strftime('%I:%M %p')
+                with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
+                    st.write(f"Email: {patient['Email']}")
+                    patient_status = check_and_update_patient_completion_status(patient["PatientID"], patients_collection)
+                    st.write(f"Status: {patient_status}")
+
+                    if patient_status == "Not Sent":
+                        link = "https://breezy.streamlit.app"
+                        if st.button("Send Email", key=str(patient['_id'])):
+                            if send_email(patient['Email'], link, patients_collection):
+                                st.success(f"Email sent to {patient['Email']}")
+                            else:
+                                st.error("Failed to send email.")
+
+                    if patient_status == "Completed":
+                        download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}")
+
+                        if download_button_pressed:
+                            # Generate the document only when the button is pressed
+                            basic_info, doc_io = generate_downloadable_docx(patient["PatientID"], patients_collection)
+
+                            # Generate a dynamic filename based on the patient's name
+                            file_name = f"{basic_info['Name'].replace(' ', '_')}_Patient_Assessment_Report.docx"
+
+                            # Directly offer the document for download
+                            st.download_button(label="Download Report",
+                                            data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
+                                            file_name=file_name,
+                                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        else:
+            st.write("No 'Date' field found in the documents.")
+    else:
+        st.write("No patient data available.")
+
+
 
 def main():
     display_patient_info()
