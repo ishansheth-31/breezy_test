@@ -32,7 +32,7 @@ initialize_session_state()
 # Now you can safely access st.session_state.bot without encountering an AttributeError
 bot = st.session_state.bot
 
-def store_full_assessment_in_mongodb(chat_history, patient_id):
+def store_full_assessment_in_mongodb(chat_history, patient_id, patients_collection):
     # Extract answers from initial_questions and map them to the database columns
     answers = st.session_state['initial_answers']
     structured_data = {
@@ -194,6 +194,16 @@ url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduG
 
 st.markdown("I consent to filling out this assessment. Click here to access our [document](%s) containing more information." % url)
 if st.checkbox("Click here to accept"):
+
+    option = st.selectbox(
+    'Who are you here to see today?',
+    ('Dr. Devendra Mehta - Arnold Palmer Hospital', 'Dr. Andrea Pezzella - Southern Urogynocology'))
+
+    if option == 'Dr. Devendra Mehta - Arnold Palmer Hospital':
+        patients_collection = db.arnoldpalmer
+    else:
+        patients_collection = db.southernurogyno
+
     display_chat_history()
 
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
@@ -209,7 +219,7 @@ if st.checkbox("Click here to accept"):
         
         patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly
         if patient_id:
-            success = store_full_assessment_in_mongodb(full_chat_history, patient_id)
+            success = store_full_assessment_in_mongodb(full_chat_history, patient_id, patients_collection)
             if success:
                 st.download_button("Download Full Assessment", data=str(full_chat_history), file_name="Patient_Full_Assessment.txt", mime="text/plain")
         else:
