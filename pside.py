@@ -259,7 +259,7 @@ def display_patient_info():
                 st.error("Login failed. Please check your credentials and try again.")
     else:
         # Directly display patient data if already logged in
-        display_patient_data(st.session_state['patients_collection'])
+        display_patient_data(st.session_state['patients_collection'], user_doc=None)
         
         # Logout button at the bottom of the sidebar
         with st.sidebar:
