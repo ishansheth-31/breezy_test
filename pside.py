@@ -278,38 +278,38 @@ def display_patient_data(patients_collection):
     patients_df = fetch_patients(patients_collection)
 
 
-    patients = patients_collection.find({})  # This fetches all documents in the collection
+    # patients = patients_collection.find({})  # This fetches all documents in the collection
 
-    collection1 = db1['southernurogyno']
-    for patient in patients:
+    # collection1 = db1['southernurogyno']
+    # for patient in patients:
 
-        assessment = patient.get("Assessment")
-        if not assessment or len(patient) <= 8:
-            continue
-    # Create an expander for each patient
-        with st.expander(f"{patient['fName']} {patient['lName']}"):
+    #     assessment = patient.get("Assessment")
+    #     if not assessment or len(patient) <= 8:
+    #         continue
+    # # Create an expander for each patient
+    #     with st.expander(f"{patient['fName']} {patient['lName']}"):
         
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.write(patient['fName'])
-            col2.write(patient['lName'])
-            col3.write("New Patient:{}".format(patient['New_Patient']))
-            col4.write("**New Patient: No**")
-            col5.write("Status:{}".format(patient["Status"]))
-            tab1, tab2, tab3, tab4, tab6, tab5  = st.tabs(["Current Medications", "Tobacco History", "Allergies", "Surgical History", "Vitals", "Breezy Assesment"])
-            #Current Meds
-            tab1.write(patient['Medications'])
-            #Tobacco
-            #tab2.write(patient['Smoke'])
-           # tab2.write(patient['second_smoke'])
-            #allergies
-            tab3.write(patient['Drug_Allergies'])
-            #surgical
-            tab4.write(patient['Surgeries'])
-            #vitals
-            tab6.write(patient['Approx_Height'])
-            tab6.write(patient['Approx_Weight'])
+    #         col1, col2, col3, col4, col5 = st.columns(5)
+    #         col1.write(patient['fName'])
+    #         col2.write(patient['lName'])
+    #         col3.write("New Patient:{}".format(patient['New_Patient']))
+    #         col4.write("**New Patient: No**")
+    #         col5.write("Status:{}".format(patient["Status"]))
+    #         tab1, tab2, tab3, tab4, tab6, tab5  = st.tabs(["Current Medications", "Tobacco History", "Allergies", "Surgical History", "Vitals", "Breezy Assesment"])
+    #         #Current Meds
+    #         tab1.write(patient['Medications'])
+    #         #Tobacco
+    #         #tab2.write(patient['Smoke'])
+    #        # tab2.write(patient['second_smoke'])
+    #         #allergies
+    #         tab3.write(patient['Drug_Allergies'])
+    #         #surgical
+    #         tab4.write(patient['Surgeries'])
+    #         #vitals
+    #         tab6.write(patient['Approx_Height'])
+    #         tab6.write(patient['Approx_Weight'])
 
-            pAs = collection1.find({})
+    #         pAs = collection1.find({})
 
     # Sidebar form for adding a new patient
     with st.sidebar.form("new_patient_form"):
