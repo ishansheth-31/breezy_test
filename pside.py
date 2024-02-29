@@ -92,7 +92,7 @@ def display_main_content(email, password):
         st.error("Failed to access patient data.")
 
 
-def send_email(to_email, link, patients_collection, fname, practice_name):
+def send_email(to_email, link, patients_collection, fname):
     patient_id = str(uuid4())
     # Modify the link to include the patient ID as a query parameter
     personalized_link = f"{link}?patient_id={patient_id}"
