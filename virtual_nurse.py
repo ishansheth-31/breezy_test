@@ -56,7 +56,7 @@ def store_full_assessment_in_mongodb(chat_history, patient_id, patients_collecti
     )
 
     if result:
-        st.success("Full assessment stored successfully for patient ID: " + str(patient_id))
+        st.success("Assessment complete. We look forward to hearing from you soon!")
         return True
     else:
         st.error("Could not store the assessment. An error occurred.")
@@ -173,19 +173,17 @@ def handle_chat_after_initial_questions():
     user_message_key = f"user_message_{st.session_state['message_counter']}"
     user_message = st.text_input("Your message:", key=user_message_key)
 
-    # Trigger the bot's response when the user message is submitted
-    if st.button("Send", key=f"send_{user_message_key}") and user_message:
-        response = bot.generate_response(user_message)
-        st.session_state.chat_history.append(("You", user_message))
-        st.session_state.chat_history.append(("Virtual Nurse", response))
-        
-        if bot.finished:
-            # Perform actions needed to conclude the conversation, e.g., display a message, save conversation
-            st.session_state['conversation_ended'] = True  # You can use a flag like this to control UI components based on the conversation state
-        else:
+    if not bot.finished:
+        if st.button("Send", key=f"send_{user_message_key}") and user_message:
+            response = bot.generate_response(user_message)
+            st.session_state.chat_history.append(("You", user_message))
+            st.session_state.chat_history.append(("Virtual Nurse", response))
             st.session_state['message_counter'] += 1
-        
-        st.experimental_rerun()
+            # Perform actions needed to conclude the conversation, e.g., display a message, save conversation
+    else:
+        st.session_state['conversation_ended'] = True
+    
+    st.experimental_rerun()
 
 
 
@@ -220,8 +218,6 @@ if st.checkbox("Click here to accept"):
         
         patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly
         if patient_id:
-            success = store_full_assessment_in_mongodb(full_chat_history, patient_id, patients_collection)
-            if success:
-                st.download_button("Download Full Assessment", data=str(full_chat_history), file_name="Patient_Full_Assessment.txt", mime="text/plain")
+            store_full_assessment_in_mongodb(full_chat_history, patient_id, patients_collection)
         else:
             st.error("Could not update patient record. Patient ID is missing or invalid.")
