@@ -10,8 +10,6 @@ client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kx
 db = client.breezydata
 patients_collection = db.emfd
 
-
-
 def initialize_session_state():
     if 'bot' not in st.session_state:
         st.session_state['bot'] = MedicalChatbot()
@@ -30,9 +28,9 @@ def initialize_session_state():
         st.session_state['current_question_index'] = 0
 
 initialize_session_state()
+bot = st.session_state.bot
 
 # Now you can safely access st.session_state.bot without encountering an AttributeError
-bot = st.session_state.bot
 
 def store_full_assessment_in_mongodb(chat_history, patient_id, patients_collection):
     # Extract answers from initial_questions and map them to the database columns
