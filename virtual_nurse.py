@@ -11,24 +11,23 @@ db = client.breezydata
 patients_collection = db.emfd
 
 def initialize_session_state():
-    if 'bot' not in st.session_state:
-        st.session_state['bot'] = MedicalChatbot()
-        st.session_state['chat_history'] = []
-        st.session_state['initial_questions'] = [
-            "Are you a new patient?",
-            "What is your name?",
-            "What is your approximate height in inches?",
-            "What is your approximate weight in pounds?",
-            "Are you currently taking any medications?",
-            "Have you had any recent surgeries?",
-            "Do you have any known drug allergies?",
-            "Finally, what are you in for today?"
-        ]
-        st.session_state['initial_answers'] = {}
-        st.session_state['current_question_index'] = 0
+    st.session_state['bot'] = MedicalChatbot()
+    st.session_state['chat_history'] = []
+    st.session_state['initial_questions'] = [
+        "Are you a new patient?",
+        "What is your name?",
+        "What is your approximate height in inches?",
+        "What is your approximate weight in pounds?",
+        "Are you currently taking any medications?",
+        "Have you had any recent surgeries?",
+        "Do you have any known drug allergies?",
+        "Finally, what are you in for today?"
+    ]
+    st.session_state['initial_answers'] = {}
+    st.session_state['current_question_index'] = 0
 
 initialize_session_state()
-bot = st.session_state['bot']
+bot = st.session_state.bot
 
 # Now you can safely access st.session_state.bot without encountering an AttributeError
 
