@@ -169,23 +169,26 @@ def handle_chat_after_initial_questions():
     if 'message_counter' not in st.session_state:
         st.session_state['message_counter'] = 0
 
-    # Use a unique key for each user message to ensure no conflicts
-    user_message_key = f"user_message_{st.session_state['message_counter']}"
-    user_message = st.text_input("Your message:", key=user_message_key)
+    # Check if the conversation is not finished to display the input and send button
+    if not bot.finished:  # Add this condition
+        user_message_key = f"user_message_{st.session_state['message_counter']}"
+        user_message = st.text_input("Your message:", key=user_message_key)
 
-    # Trigger the bot's response when the user message is submitted
-    if st.button("Send", key=f"send_{user_message_key}") and user_message:
-        response = bot.generate_response(user_message)
-        st.session_state.chat_history.append(("You", user_message))
-        st.session_state.chat_history.append(("Virtual Nurse", response))
-        
-        if bot.finished:
-            # Perform actions needed to conclude the conversation, e.g., display a message, save conversation
-            st.session_state['conversation_ended'] = True  # You can use a flag like this to control UI components based on the conversation state
-        else:
+        if st.button("Send", key=f"send_{user_message_key}") and user_message:
+            response = bot.generate_response(user_message)
+            st.session_state.chat_history.append(("You", user_message))
+            st.session_state.chat_history.append(("Virtual Nurse", response))
+            
+            if bot.finished:
+                # If the bot is finished after generating the response, then rerun to refresh the UI and hide input and button
+                st.experimental_rerun()
+
             st.session_state['message_counter'] += 1
-        
-        st.experimental_rerun()
+    else:
+        # Here you can add any logic that should happen after the conversation is over,
+        # For example, displaying a message that the conversation has ended.
+        st.write("Thank you for your time, we'll see you in the office later today.")
+
 
 
 
