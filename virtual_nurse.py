@@ -185,9 +185,7 @@ def handle_chat_after_initial_questions():
             st.session_state.chat_history.append(("You", user_message))
             st.session_state.chat_history.append(("Virtual Nurse", response))
             
-            if bot.finished:
-                # If the bot is finished after generating the response, then rerun to refresh the UI and hide input and button
-                st.experimental_rerun()
+            st.experimental_rerun()
 
             st.session_state['message_counter'] += 1
 
