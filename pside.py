@@ -238,6 +238,7 @@ def display_patient_info():
         if submit_button:
             if validate_credentials(email, password) is not None:
                 display_patient_data(st.session_state['patients_collection'])
+                st.experimental_rerun()
             else:
                 st.error("Login failed. Please check your credentials and try again.")
     else:
