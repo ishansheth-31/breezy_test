@@ -4,7 +4,10 @@ from pymongo import MongoClient
 from uuid import UUID
 import os
 
-client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
+# client = MongoClient("mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/?retryWrites=true&w=majority")
+mongo_key = os.getenv('MONGO_KEY')
+client = MongoClient(mongo_key)
+
 db = client.breezydata
 patients_collection = db.emfd
 
