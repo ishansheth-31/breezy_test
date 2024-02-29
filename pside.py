@@ -109,10 +109,9 @@ def send_email(to_email, link, patients_collection, fname):
     <html>
         <body>
             <p>Hello {fname},</p>
-            <p>Welcome to Breezy. You will be conducting your patient assessment at {practice_name} so we can understand your reason for visiting in advance.</p>
+            <p>Welcome to Breezy. You will be conducting your patient assessment so we can understand your reason for visiting in advance.</p>
             <p>Please complete your <a href="{personalized_link}">assessment</a> before your appointment.</p>
-            <p>We look forward to seeing you soon!<br>
-            {practice_name}</p>
+            <p>We look forward to seeing you soon!</p>
         </body>
     </html>
     """
