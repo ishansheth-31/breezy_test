@@ -5,7 +5,7 @@ from uuid import UUID
 import os
 
 mongo_key = os.getenv('MONGO_KEY')
-client = MongoClient(mongo_key)
+client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
 db = client.breezydata
 patients_collection = db.emfd
