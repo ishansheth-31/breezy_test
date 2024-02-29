@@ -78,7 +78,7 @@ def validate_credentials(email, password):
         st.session_state['logged_in'] = True
         st.session_state['patients_collection'] = patients_collection
         st.session_state['user_email'] = email  # Store the user's email in session state for easy access
-        return patients_collection
+        return patients_collection, user_doc
     else:
         st.error("Invalid email or password. Please try again.")
         return None
@@ -86,7 +86,8 @@ def validate_credentials(email, password):
 
 
 def display_main_content(email, password):
-    if validate_credentials(email, password):
+    patients_collection, user_doc = validate_credentials(email, password)
+    if patients_collection is not None:
         display_patient_info()  # Adjust if this function also needs the collection passed as an argument
     else:
         st.error("Failed to access patient data.")
@@ -250,8 +251,9 @@ def display_patient_info():
     if not st.session_state.get('logged_in', False):
         submit_button, email, password = login_form()
         if submit_button:
-            if validate_credentials(email, password) is not None:
-                display_patient_data(st.session_state['patients_collection'])
+            patients_collection, user_doc = validate_credentials(email, password)
+            if patients_collection is not None:
+                display_patient_data(st.session_state['patients_collection'], user_doc)
                 st.experimental_rerun()
             else:
                 st.error("Login failed. Please check your credentials and try again.")
@@ -269,7 +271,7 @@ def display_patient_info():
                 st.experimental_rerun()
 
 
-def display_patient_data(patients_collection):
+def display_patient_data(patients_collection, user_doc):
     st.title("Breezy Portal")
 
     patients_df = fetch_patients(patients_collection)
@@ -323,7 +325,7 @@ def display_patient_data(patients_collection):
                     if patient_status == "Not Sent":
                         link = "https://breezy.streamlit.app"
                         if st.button("Send Email", key=str(patient['_id'])):
-                            if send_email(patient['Email'], link, patients_collection, patient["fName"], patients_collection["Name"]):
+                            if send_email(patient['Email'], link, patients_collection, patient["fName"], user_doc["Name"]):
                                 st.success(f"Email sent to {patient['Email']}")
                                 st.experimental_rerun()
                             else:
