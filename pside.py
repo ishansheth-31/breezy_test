@@ -78,7 +78,7 @@ def validate_credentials(email, password):
         st.session_state['logged_in'] = True
         st.session_state['patients_collection'] = patients_collection
         st.session_state['user_email'] = email  # Store the user's email in session state for easy access
-        return patients_collection, user_doc
+        return patients_collection
     else:
         st.error("Invalid email or password. Please try again.")
         return None
@@ -86,8 +86,7 @@ def validate_credentials(email, password):
 
 
 def display_main_content(email, password):
-    patients_collection, user_doc = validate_credentials(email, password)
-    if patients_collection is not None:
+    if validate_credentials(email, password):
         display_patient_info()  # Adjust if this function also needs the collection passed as an argument
     else:
         st.error("Failed to access patient data.")
@@ -251,16 +250,14 @@ def display_patient_info():
     if not st.session_state.get('logged_in', False):
         submit_button, email, password = login_form()
         if submit_button:
-            patients_collection, user_doc = validate_credentials(email, password)
-            if patients_collection is not None:
-                display_patient_data(st.session_state['patients_collection'], user_doc)
+            if validate_credentials(email, password) is not None:
+                display_patient_data(st.session_state['patients_collection'])
                 st.experimental_rerun()
             else:
                 st.error("Login failed. Please check your credentials and try again.")
     else:
         # Directly display patient data if already logged in
-        patients_collection, user_doc = validate_credentials(email, password)
-        display_patient_data(st.session_state['patients_collection'], user_doc)
+        display_patient_data(st.session_state['patients_collection'])
         
         # Logout button at the bottom of the sidebar
         with st.sidebar:
@@ -272,7 +269,7 @@ def display_patient_info():
                 st.experimental_rerun()
 
 
-def display_patient_data(patients_collection, user_doc):
+def display_patient_data(patients_collection):
     st.title("Breezy Portal")
 
     patients_df = fetch_patients(patients_collection)
@@ -326,7 +323,7 @@ def display_patient_data(patients_collection, user_doc):
                     if patient_status == "Not Sent":
                         link = "https://breezy.streamlit.app"
                         if st.button("Send Email", key=str(patient['_id'])):
-                            if send_email(patient['Email'], link, patients_collection, patient["fName"], user_doc["Name"]):
+                            if send_email(patient['Email'], link, patients_collection, patient["fName"], patients_collection["Name"]):
                                 st.success(f"Email sent to {patient['Email']}")
                                 st.experimental_rerun()
                             else:
