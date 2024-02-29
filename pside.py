@@ -280,7 +280,7 @@ def display_patient_data(patients_collection):
 
     patients = patients_collection.find({})  # This fetches all documents in the collection
 
-    collection1 = db1[patients_collection]
+    collection1 = db1['southernurogyno']
     for patient in patients:
     # Create an expander for each patient
         with st.expander(f"{patient['fName']} {patient['lName']}"):
