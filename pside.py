@@ -282,6 +282,10 @@ def display_patient_data(patients_collection):
 
     collection1 = db1['southernurogyno']
     for patient in patients:
+
+        assessment = patient.get("Assessment")
+        if not assessment or len(patient) <= 8:
+            continue
     # Create an expander for each patient
         with st.expander(f"{patient['fName']} {patient['lName']}"):
         
