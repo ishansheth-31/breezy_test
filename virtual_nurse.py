@@ -173,17 +173,19 @@ def handle_chat_after_initial_questions():
     user_message_key = f"user_message_{st.session_state['message_counter']}"
     user_message = st.text_input("Your message:", key=user_message_key)
 
-    if not bot.finished:
-        if st.button("Send", key=f"send_{user_message_key}") and user_message:
-            response = bot.generate_response(user_message)
-            st.session_state.chat_history.append(("You", user_message))
-            st.session_state.chat_history.append(("Virtual Nurse", response))
-            st.session_state['message_counter'] += 1
+    # Trigger the bot's response when the user message is submitted
+    if st.button("Send", key=f"send_{user_message_key}") and user_message:
+        response = bot.generate_response(user_message)
+        st.session_state.chat_history.append(("You", user_message))
+        st.session_state.chat_history.append(("Virtual Nurse", response))
+        
+        if bot.finished:
             # Perform actions needed to conclude the conversation, e.g., display a message, save conversation
-    else:
-        st.session_state['conversation_ended'] = True
-    
-    st.experimental_rerun()
+            st.session_state['conversation_ended'] = True  # You can use a flag like this to control UI components based on the conversation state
+        else:
+            st.session_state['message_counter'] += 1
+        
+        st.experimental_rerun()
 
 
 
