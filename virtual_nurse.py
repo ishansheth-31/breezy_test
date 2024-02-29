@@ -185,9 +185,9 @@ def handle_chat_after_initial_questions():
             st.session_state.chat_history.append(("You", user_message))
             st.session_state.chat_history.append(("Virtual Nurse", response))
             
+            st.session_state['message_counter'] += 1
             st.experimental_rerun()
 
-            st.session_state['message_counter'] += 1
 
 
 
