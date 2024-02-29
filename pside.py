@@ -322,7 +322,7 @@ def display_patient_data(patients_collection):
                     if patient_status == "Not Sent":
                         link = "https://breezy.streamlit.app"
                         if st.button("Send Email", key=str(patient['_id'])):
-                            if send_email(patient['Email'], link, patients_collection, patient["fName"], patients_collection["Name"]):
+                            if send_email(patient['Email'], link, patients_collection, patient["fName"]):
                                 st.success(f"Email sent to {patient['Email']}")
                                 st.experimental_rerun()
                             else:
