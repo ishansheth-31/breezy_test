@@ -248,10 +248,10 @@ def generate_downloadable_docx(patient_id, patients_collection):
     return basic_info, doc_io
 
 def display_patient_info():
+    patients_collection, user_doc = validate_credentials(email, password)
     if not st.session_state.get('logged_in', False):
         submit_button, email, password = login_form()
         if submit_button:
-            patients_collection, user_doc = validate_credentials(email, password)
             if patients_collection is not None:
                 display_patient_data(st.session_state['patients_collection'], user_doc)
                 st.experimental_rerun()
@@ -259,7 +259,7 @@ def display_patient_info():
                 st.error("Login failed. Please check your credentials and try again.")
     else:
         # Directly display patient data if already logged in
-        display_patient_data(st.session_state['patients_collection'], user_doc=None)
+        display_patient_data(st.session_state['patients_collection'], user_doc)
         
         # Logout button at the bottom of the sidebar
         with st.sidebar:
