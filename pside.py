@@ -92,7 +92,7 @@ def display_main_content(email, password):
         st.error("Failed to access patient data.")
 
 
-def send_email(to_email, link, patients_collection):
+def send_email(to_email, link, patients_collection, fname, practice_name):
 
     patient_id = str(uuid4())
     # Modify the link to include the patient ID as a query parameter
@@ -109,7 +109,16 @@ def send_email(to_email, link, patients_collection):
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    body = f"Hello! Welcome to Breezy. You will be conducting your patient assessment. Please complete this before your appointed so your doctor can have detailed insights: {personalized_link}"
+    body = f"""
+    Hello {fname},
+
+    Welcome to Breezy. You will be conducting your patient assessment at {practice_name} so we can understand your reason for visiting in advance.
+
+    Please complete your [assessment](%s) before your appointment.
+
+    We look forward to seeing you soon!
+    {practice_name}
+    """ % personalized_link
     msg.attach(MIMEText(body, 'plain'))
 
     try:
@@ -309,7 +318,7 @@ def display_patient_data(patients_collection):
                     if patient_status == "Not Sent":
                         link = "https://breezy.streamlit.app"
                         if st.button("Send Email", key=str(patient['_id'])):
-                            if send_email(patient['Email'], link, patients_collection):
+                            if send_email(patient['Email'], link, patients_collection, patient["fName"], patients_collection["Name"]):
                                 st.success(f"Email sent to {patient['Email']}")
                             else:
                                 st.error("Failed to send email.")
