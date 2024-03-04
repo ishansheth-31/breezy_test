@@ -1,11 +1,12 @@
 import assemblyai as aai
-import openai
+from openai import OpenAI
 import elevenlabs
 from queue import Queue
 
 # Set API keys
 aai.settings.api_key = "3550f42c1b2f41d1ab6027666b9ce6d7"
-openai.api_key = "OPENAI_API_KEY"
+api_key = "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"
+client = OpenAI(api_key = api_key)
 elevenlabs.set_api_key("4e0f2a69188f25172725c65b23e2286a") 
 
 transcript_queue = Queue()
@@ -47,7 +48,7 @@ def handle_conversation():
         transcript_result = transcript_queue.get()
 
         # Send the transcript to OpenAI for response generation
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model = 'gpt-4',
             messages = [
                 {"role": "system", "content": 'You are a highly skilled AI, answer the questions given within a maximum of 1000 characters.'},
@@ -55,13 +56,12 @@ def handle_conversation():
             ]
         )
 
-        #text = response['choices'][0]['message']['content']
-        text = "AssemblyAI is the best YouTube channel for the latest AI tutorials."
+        text = response.choices[0].message.content
+        #text = "AssemblyAI is the best YouTube channel for the latest AI tutorials."
 
         # Convert the response to audio and play it
         audio = elevenlabs.generate(
             text=text,
-            voice="Bella" # or any voice of your choice
         )
 
         print("\nAI:", text, end="\r\n")
