@@ -243,94 +243,73 @@ Here is the chat history to base this off of below: \n"""
         except Exception as e:
             return f"An error occurred: {str(e)}"
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import os
+import tempfile
+import whisper
+
+from elevenlabs import generate, play
 
 
-
-def listen(filename="output.wav", duration=5, fs=44100, threshold=0.001):
+async def async_listen(filename="output.wav", duration=5, fs=44100, threshold=0.001):
     """
     Listens to the microphone and records audio to `filename` until there is silence or a duration of `duration` seconds has passed.
     The audio is recorded at a sampling rate of `fs` and a silence threshold of `threshold`.
+
+    This function uses asynchronous programming to avoid blocking the main thread while recording audio.
     """
-    # Function to detect if the current audio block is silent based on a threshold.
+
     def is_silent(data, threshold):
         return np.abs(data).mean() < threshold
 
-    # Start recording
     print("Listening...")
     audio_data = sd.rec(int(duration * fs), samplerate=fs, channels=1)
     sd.wait()
 
-    # Check if the last block is silent
-    if is_silent(audio_data[-int(fs*0.5):], threshold):
+    if is_silent(audio_data[-int(fs * 0.5):], threshold):
         print("Silence detected, stopping recording.")
         # Truncate silence from the end
         time.sleep(2)
-        # audio_data = audio_data[:np.where(is_silent(audio_data[::-1], threshold))[0][0]]
         silent_indices = np.where(is_silent(audio_data[::-1], threshold))[0]
         if silent_indices.size > 0:
             audio_data = audio_data[:-silent_indices[0]]
         else:
             print("No silence detected at the end of the recording.")
-    # Save the recorded audio to a file
     write(filename, fs, audio_data)
     print(f"Recording saved to {filename}")
     return filename
 
-# Transcribe the audio file using Whisper
-def transcribe(audio_file_path):
-    import whisper
 
+def transcribe(audio_file_path):
+    """
+    Transcribe the audio file using Whisper
+    """
     model = whisper.load_model("base")
     result = model.transcribe(audio_file_path)
     print(result["text"])
     return result["text"]
 
 
+def speak(text, your_api_key="4e0f2a69188f25172725c65b23e2286a", voice="Brian"):
+    """
+    Speaks the given text using ElevenLabs.
+    Replace "YOUR_ELEVENLABS_API_KEY" with your actual ElevenLabs API key.
 
-# def speak(text):
-#     # Replace 'YOUR_VOICE_ID' with the ID of the voice you want to use
-#     # Replace 'YOUR_MODEL_ID' with the model ID you want to use, e.g., 'eleven_multilingual_v2'
-#     audio = generate(
-#       text=text,
-#       api_key="6104e4b41da69ccbacd868756ce88acb",
-#       voice="Rachel",
-#       model="eleven_turbo_v2"
-#     )
-#     play(audio)no
-
-
-def speak(text):
-    # Generate speech using gTTS
-    tts = gTTS(text=text, lang='en')  # gTTS doesn't use voice ID or model ID like the original function
-    
-    # Save the generated speech to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as fp:
-        temp_file = fp.name
-        tts.save(temp_file)
-    
-    # Play the speech
-    playsound.playsound(temp_file)
-    
-    # Remove the temporary file
-    os.remove(temp_file)
-
-executor = ThreadPoolExecutor()
-
-async def async_listen(filename="output.wav", duration=5):
-    loop = asyncio.get_running_loop()
-    # Run the synchronous listen function in a separate thread
-    audio_file = await loop.run_in_executor(executor, listen, filename, duration)
-    return audio_file
-
-async def async_transcribe(audio_file_path):
-    loop = asyncio.get_running_loop()
-    # Run the synchronous transcribe function in a separate thread
-    text = await loop.run_in_executor(executor, transcribe, audio_file_path)
-    return text
+    This function uses the ElevenLabs API to generate natural-sounding speech from the provided text.
+    Consider using the voice "eleven_healthcare_v2" for a healthcare-specific voice that might be more suitable for a virtual nurse assistant.
+    """
+    audio = generate(
+        text=text,
+        api_key=your_api_key,
+        voice=voice,
+        model="eleven_turbo_v2",  # Consider using "eleven_healthcare_v2" for healthcare-specific voice
+    )
+    play(audio)
 
 
 async def main():
-    print("Hello, I'm your virtual nurse assistant. Let's start with some basic questions.")
+    print("Hello, I'm your virtual nurse assistant. Let's start with some basic questions to gather your medical history and understand your current condition. I will then use this information to create a patient assessment report.")
     bot = MedicalChatbot()
     last_initial_answer = bot.handle_initial_questions()  # Collect answers and get the last answer
 
@@ -341,23 +320,18 @@ async def main():
         print("Virtual Nurse:", response)
 
     while not bot.finished:
-        #user_input = input("You: ")
+        # user_input = input("You: ")
         audio_file = await async_listen()  # This will start recording
-        user_input = await async_transcribe(audio_file)
+        user_input = transcribe(audio_file)
         response = bot.generate_response(user_input)
         speak(response)
         print("Virtual Nurse:", response)
         bot.should_stop(response)
 
     if bot.finished:
-        report_content = bot.create_report().choices[0].message.content  # Assuming create_report returns a response object
+        report_content = bot.create_report().choices[0].message.content
         file_path = bot.extract_and_save_report(report_content)
-        print(f"Report saved to: {file_path}")
+        print(f"Your patient assessment report has been saved to: {file_path}")
 
-
-# Run the main async function
 if __name__ == "__main__":
     asyncio.run(main())
-
-# if __name__ == "__main__":
-#     main()
