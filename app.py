@@ -1,6 +1,6 @@
 from openai import OpenAI
 from docx import Document
-from elevenlabs import generate, play
+# from elevenlabs import generate, play
 import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
