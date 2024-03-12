@@ -222,6 +222,7 @@ def add_new_patient(fName, lName, email, appointment_datetime, patients_collecti
         "Assessment": ""
     }
     patients_collection.insert_one(new_patient)
+    st.sidebar.success("Patient Added Successfully")
     st.experimental_rerun()  # Rerun the app to reflect the update immediately
 
 
@@ -275,7 +276,6 @@ def display_patient_info():
                 if fName and lName and email and appointment_date and appointment_time:
                     appointment_datetime = datetime.combine(appointment_date, appointment_time)
                     add_new_patient(fName, lName, email, appointment_datetime, st.session_state['patients_collection'])
-                    st.sidebar.success("Patient Added Successfully")
                 else:
                     st.sidebar.error("Please fill out all fields.")
 
