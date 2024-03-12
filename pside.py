@@ -53,12 +53,12 @@ openai_client = OpenAI(api_key=api_key)
 
 # MongoDB setup
 mongo_key = os.getenv('MONGO_KEY')
-client = MongoClient(mongo_key)
+client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-db1 = client['breezyassessements']  # 
+db1 = client.Eastmariettafamilydentistry
 
-db = client.breezydata
-accounts_collection = db.Accounts
+db = client.breezyaccounts
+accounts_collection = db.accounts
 
 
 import streamlit as st
@@ -76,7 +76,7 @@ def validate_credentials(email, password):
     if user_doc:
         # Retrieve the patients collection for the logged-in user
         db_test = user_doc["Collection"]
-        patients_collection = db[db_test]
+        patients_collection = db1[db_test]
         st.session_state['logged_in'] = True
         st.session_state['patients_collection'] = patients_collection
         st.session_state['user_email'] = email  # Store the user's email in session state for easy access
@@ -259,7 +259,26 @@ def display_patient_info():
     else:
         # Directly display patient data if already logged in
         display_patient_data(st.session_state['patients_collection'])
-        
+
+        # Sidebar form for adding a new patient
+        with st.sidebar.form("new_patient_form", clear_on_submit=True):  # clear_on_submit can clear the form after submission
+            st.write("Add New Patient")
+            fName = st.text_input("First Name")
+            lName = st.text_input("Last Name")
+            email = st.text_input("Email")
+            appointment_date = st.date_input("Appointment Date")
+            appointment_time = st.time_input("Appointment Time")
+            submit_new_patient = st.form_submit_button("Add")
+
+            if submit_new_patient:
+                # Perform input validation here (e.g., check for empty fields)
+                if fName and lName and email and appointment_date and appointment_time:
+                    appointment_datetime = datetime.combine(appointment_date, appointment_time)
+                    add_new_patient(fName, lName, email, appointment_datetime, st.session_state['patients_collection'])
+                    st.sidebar.success("Patient Added Successfully")
+                else:
+                    st.sidebar.error("Please fill out all fields.")
+
         # Logout button at the bottom of the sidebar
         with st.sidebar:
             st.write("")  # Add some space
@@ -270,6 +289,7 @@ def display_patient_info():
                 st.experimental_rerun()
 
 
+
 def display_patient_data(patients_collection):
     st.title("Breezy Portal")
     st.subheader("**Today's Patients**")
@@ -277,64 +297,6 @@ def display_patient_data(patients_collection):
 
     patients_df = fetch_patients(patients_collection)
 
-
-    # patients = patients_collection.find({})  # This fetches all documents in the collection
-
-    # collection1 = db1['southernurogyno']
-    # for patient in patients:
-
-    #     assessment = patient.get("Assessment")
-    #     if not assessment or len(patient) <= 8:
-    #         continue
-    # # Create an expander for each patient
-    #     with st.expander(f"{patient['fName']} {patient['lName']}"):
-        
-    #         col1, col2, col3, col4, col5 = st.columns(5)
-    #         col1.write(patient['fName'])
-    #         col2.write(patient['lName'])
-    #         col3.write("New Patient:{}".format(patient['New_Patient']))
-    #         col4.write("**New Patient: No**")
-    #         col5.write("Status:{}".format(patient["Status"]))
-    #         tab1, tab2, tab3, tab4, tab6, tab5  = st.tabs(["Current Medications", "Tobacco History", "Allergies", "Surgical History", "Vitals", "Breezy Assesment"])
-    #         #Current Meds
-    #         tab1.write(patient['Medications'])
-    #         #Tobacco
-    #         #tab2.write(patient['Smoke'])
-    #        # tab2.write(patient['second_smoke'])
-    #         #allergies
-    #         tab3.write(patient['Drug_Allergies'])
-    #         #surgical
-    #         tab4.write(patient['Surgeries'])
-    #         #vitals
-    #         tab6.write(patient['Approx_Height'])
-    #         tab6.write(patient['Approx_Weight'])
-
-    #         pAs = collection1.find({})
-
-    # Sidebar form for adding a new patient
-    with st.sidebar.form("new_patient_form"):
-        st.write("Add New Patient")
-        fName = st.text_input("First Name", "")
-        lName = st.text_input("Last Name", "")
-        email = st.text_input("Email", "")
-        appointment_date = st.date_input("Appointment Date")
-        appointment_time = st.time_input("Appointment Time")
-
-        email_is_valid = is_valid_email(email)
-        submit_button = st.form_submit_button("Submit")
-
-        if submit_button:
-            if not (fName and lName and email and email_is_valid):
-                if not email_is_valid:
-                    st.warning("Please enter a valid email address.")
-                else:
-                    st.warning("Please fill out all required fields.")
-            else:
-                appointment_datetime = datetime.combine(appointment_date, appointment_time)
-                add_new_patient(fName, lName, email, appointment_datetime, patients_collection)
-                st.sidebar.success("Patient Added Successfully")
-
-    # Check if DataFrame is not empty and 'Date' column exists
     if not patients_df.empty:
         if 'Date' in patients_df.columns:
             patients_df['Date'] = pd.to_datetime(patients_df['Date'], errors='coerce')  # Ensure conversion
@@ -345,12 +307,11 @@ def display_patient_data(patients_collection):
             min_date = patients_df['appointmentDate'].min()
             max_date = patients_df['appointmentDate'].max()
 
-
             selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
 
             selected_patients = patients_df[patients_df['appointmentDate'] == selected_date]
 
-            for _, patient in selected_patients.iterrows():
+            for index, patient in selected_patients.iterrows():
                 appointment_time = patient['Date'].strftime('%I:%M %p')
                 with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
                     st.write(f"Email: {patient['Email']}")
@@ -359,7 +320,7 @@ def display_patient_data(patients_collection):
 
                     if patient_status == "Not Sent":
                         link = "https://breezy.streamlit.app"
-                        if st.button("Send Email", key=str(patient['_id'])):
+                        if st.button("Send Email", key=f"send_email_{index}"):
                             if send_email(patient['Email'], link, patients_collection, patient["fName"]):
                                 st.success(f"Email sent to {patient['Email']}")
                                 st.experimental_rerun()
@@ -367,7 +328,7 @@ def display_patient_data(patients_collection):
                                 st.error("Failed to send email.")
 
                     if patient_status == "Completed":
-                        download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}")
+                        download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}_{index}")
 
                         if download_button_pressed:
                             # Generate the document only when the button is pressed
@@ -378,13 +339,14 @@ def display_patient_data(patients_collection):
 
                             # Directly offer the document for download
                             st.download_button(label="Download Report",
-                                            data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
-                                            file_name=file_name,
-                                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                               data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
+                                               file_name=file_name,
+                                               mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
             st.write("No 'Date' field found in the documents.")
     else:
         st.write("No patient data available.")
+
 
 
 
