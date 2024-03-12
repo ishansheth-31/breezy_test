@@ -199,15 +199,6 @@ url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduG
 st.markdown("I consent to filling out this assessment. Click here to access our [document](%s) containing more information." % url)
 if st.checkbox("Click here to accept"):
 
-    option = st.selectbox(
-    'Who are you here to see today?',
-    ('Dr. Devendra Mehta - Arnold Palmer Hospital', 'Dr. Andrea Pezzella - Southern Urogynocology'))
-
-    if option == 'Dr. Devendra Mehta - Arnold Palmer Hospital':
-        patients_collection = db.arnoldpalmer
-    else:
-        patients_collection = db.southernurogyno
-
     display_chat_history()
 
     if st.session_state['current_question_index'] < len(st.session_state['initial_questions']):
