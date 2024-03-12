@@ -113,7 +113,7 @@ class MedicalChatbot:
         """
         Determine if the conversation should be ended based on the user's message.
         """
-        if "thank you for your time, we'll see you in the office later today." in message.lower():
+        if "we'll see you in the office later today." in message.lower():
             self.finished = True
 
 
