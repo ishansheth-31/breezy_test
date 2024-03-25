@@ -113,7 +113,7 @@ class MedicalChatbot:
         """
         Determine if the conversation should be ended based on the user's message.
         """
-        if "we'll see you in the office later today." in message.lower():
+        if "we'll see you in the office later today" in message.lower():
             self.finished = True
 
 
@@ -129,13 +129,6 @@ class MedicalChatbot:
         assistant_message = response.choices[0].message.content
         self.context.append({'role': 'assistant', 'content': assistant_message})
         return assistant_message
-
-    def should_stop(self, message):
-        """
-        Determine if the conversation should be ended based on the user's message.
-        """
-        if "end" in message.lower():
-            self.finished = True
 
     def update_patient_info(self, category, content):
         """
