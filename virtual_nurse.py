@@ -7,7 +7,7 @@ import os
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-db = client.EastMariettaFamilyDentistry
+db = client.Eastmariettafamilydentistry
 patients_collection = db.emfd
 
 def initialize_session_state():
