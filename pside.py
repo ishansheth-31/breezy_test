@@ -346,17 +346,26 @@ def display_patient_data(patients_collection):
                         download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}_{index}")
 
                         if download_button_pressed:
+                            # Generate the document only when the button is pressed
                             basic_info, doc_io = generate_downloadable_docx(patient["PatientID"], patients_collection)
-                            file_name = f"{basic_info['Name'].replace(' ', '_')}_Patient_Assessment_Report.docx"
-                            st.download_button(label="Download Report",
-                                            data=doc_io.getvalue(),
-                                            file_name=file_name,
-                                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
+                            # Generate a dynamic filename based on the patient's full name
+                            if 'fName' in basic_info and 'lName' in basic_info:
+                                full_name = f"{basic_info['fName']}_{basic_info['lName']}".replace(' ', '_')
+                            else:
+                                full_name = "Patient"
+                            file_name = f"{full_name}_Patient_Assessment_Report.docx"
+
+                            # Directly offer the document for download
+                            st.download_button(label="Download Report",
+                                               data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
+                                               file_name=file_name,
+                                               mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
             st.write("No 'Date' field found in the documents.")
     else:
         st.write("No patient data available.")
+
 
 
 
