@@ -181,35 +181,50 @@ def generate_patient_assessment_report(patient_id, patients_collection):
     if not assessment:
         return "Assessment not found in document"
 
-    # Correctly format the chat history for the prompt
-    # Adjusting to correctly handle the list of lists structure
     formatted_chat_history = "\n".join([f'{entry[0]}: "{entry[1]}"' for entry in assessment])
 
-    basic_info = {
-        "New Patient": document.get("New_Patient", "No information"),
-        "Name": document.get("Name", "No information"),
-        "Approx Height": document.get("Approx_Height", "No information"),
-        "Approx Weight": document.get("Approx_Weight", "No information"),
-        "Drug Allergies": document.get("Drug_Allergies", "No information"),
-        "Medications": document.get("Medications", "No information"),
-        "Surgeries": document.get("Surgeries", "No information"),
-        "Reason For Visit": document.get("Reason_For_Visit", "No information"),
-    }
-
-    # Build the prompt for the report
     prompt = f"{new_prompt}\n\n{formatted_chat_history}"
 
     try:
-        # Assuming 'response' is the variable holding the response from the OpenAI API call
         response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "system", "content": prompt}]
         )
-        # Correctly access the generated text from the response
-        generated_report = response.choices[0].message.content  # Corrected way to access 'text'
-        return generated_report, basic_info
+        generated_report = response.choices[0].message.content
+
+        # Parse the generated report text to get the SOAP sections
+        report_sections = parse_report_sections(generated_report)
+
+        # Store the parsed sections in the database
+        update_patient_report_in_db(patient_id, report_sections, patients_collection)
+
+        return generated_report, report_sections
     except Exception as e:
         return f"An error occurred: {str(e)}"
+
+def parse_report_sections(report_text):
+    patterns = {
+        "Subjective": r"Subjective:\s*(.*?)\n(?=Objective:)",
+        "Objective": r"Objective:\s*(.*?)\n(?=Analysis:)",
+        "Analysis": r"Analysis:\s*(.*?)\n(?=Plan:)",
+        "Plan": r"Plan:\s*(.*?)\n(?=Implementation:)",
+        "Implementation": r"Implementation:\s*(.*?)\n(?=Evaluation:)",
+        "Evaluation": r"Evaluation:\s*(.*)"
+    }
+    sections = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, report_text, re.DOTALL)
+        if match:
+            sections[key] = match.group(1).strip()
+    return sections
+
+def update_patient_report_in_db(patient_id, report_sections, patients_collection):
+    if report_sections:
+        patients_collection.update_one(
+            {"PatientID": patient_id},
+            {"$set": {section: text for section, text in report_sections.items()}}
+        )
+
 
 def add_new_patient(fName, lName, email, appointment_datetime, patients_collection):
     new_patient = {
@@ -232,21 +247,21 @@ def is_valid_email(email):
     return re.match(pattern, email, re.I)  # re.I is for case-insensitive matching
 
 def generate_downloadable_docx(patient_id, patients_collection):
-    report_content, basic_info = generate_patient_assessment_report(patient_id, patients_collection)
+    report_content, report_sections = generate_patient_assessment_report(patient_id, patients_collection)
+    
     doc = Document()
     doc.add_heading('Patient Assessment Report', 0)
-    for key, value in basic_info.items():
-        doc.add_paragraph(f"{key}: {value}")
-    doc.add_paragraph()
-    doc.add_heading('Assessment', level=1)
-    doc.add_paragraph(report_content)
     
-    # Save the document to a BytesIO object
+    for section, content in report_sections.items():
+        doc.add_heading(section, level=1)
+        doc.add_paragraph(content)
+    
     doc_io = BytesIO()
     doc.save(doc_io)
     doc_io.seek(0)
     
-    return basic_info, doc_io
+    return report_sections, doc_io
+
 
 def display_patient_info():
     if not st.session_state.get('logged_in', False):
@@ -331,17 +346,13 @@ def display_patient_data(patients_collection):
                         download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}_{index}")
 
                         if download_button_pressed:
-                            # Generate the document only when the button is pressed
                             basic_info, doc_io = generate_downloadable_docx(patient["PatientID"], patients_collection)
-
-                            # Generate a dynamic filename based on the patient's name
                             file_name = f"{basic_info['Name'].replace(' ', '_')}_Patient_Assessment_Report.docx"
-
-                            # Directly offer the document for download
                             st.download_button(label="Download Report",
-                                               data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
-                                               file_name=file_name,
-                                               mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                            data=doc_io.getvalue(),
+                                            file_name=file_name,
+                                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
         else:
             st.write("No 'Date' field found in the documents.")
     else:
