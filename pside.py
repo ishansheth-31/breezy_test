@@ -342,8 +342,6 @@ def display_patient_data(patients_collection):
                         if email_sent:
                             st.session_state[email_sent_key] = True
                             st.success("Email sent successfully.")
-                            # Delay rerun or ensure the state is updated before rerunning
-                            time.sleep(1)  # Delay for 1 second before rerunning, as an example
                             st.experimental_rerun()
                         else:
                             st.error("Failed to send email.")
