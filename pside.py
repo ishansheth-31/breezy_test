@@ -11,6 +11,8 @@ from openai import OpenAI
 import os
 from datetime import datetime
 import re  # Import the regular expressions module
+from st_copy_to_clipboard import st_copy_to_clipboard
+
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
 Document the patient's responses and any additional relevant information, as a nurse would for a doctor to use.
@@ -55,7 +57,7 @@ openai_client = OpenAI(api_key=api_key)
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-db1 = client.Eastmariettafamilydentistry
+db1 = client.Southernurogyno
 
 db = client.breezyaccounts
 accounts_collection = db.accounts
@@ -313,62 +315,59 @@ def display_patient_data(patients_collection):
     patients_df = fetch_patients(patients_collection)
 
     if not patients_df.empty:
-        if 'Date' in patients_df.columns:
-            patients_df['Date'] = pd.to_datetime(patients_df['Date'], errors='coerce')  # Ensure conversion
-            patients_df.dropna(subset=['Date'], inplace=True)  # Drop rows with invalid 'Date'
-            patients_df.sort_values(by='Date', inplace=True)
+        patients_df['Date'] = pd.to_datetime(patients_df['Date'], errors='coerce')
+        patients_df.dropna(subset=['Date'], inplace=True)
+        patients_df.sort_values(by='Date', inplace=True)
 
-            patients_df['appointmentDate'] = patients_df['Date'].dt.date
-            min_date = patients_df['appointmentDate'].min()
-            max_date = patients_df['appointmentDate'].max()
+        min_date = patients_df['Date'].min().date()
+        max_date = patients_df['Date'].max().date()
+        selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
 
-            selected_date = st.sidebar.date_input("Select a Date", min_value=min_date, max_value=max_date, value=min_date)
+        selected_patients = patients_df[patients_df['Date'].dt.date == selected_date]
 
-            selected_patients = patients_df[patients_df['appointmentDate'] == selected_date]
+        for index, patient in selected_patients.iterrows():
+            appointment_time = patient['Date'].strftime('%I:%M %p')
+            with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
+                st.write(f"Email: {patient['Email']}")
+                patient_status = check_and_update_patient_completion_status(patient["PatientID"], patients_collection)
+                st.write(f"Status: {patient_status}")
 
-            for index, patient in selected_patients.iterrows():
-                appointment_time = patient['Date'].strftime('%I:%M %p')
-                with st.expander(f"{patient['fName']} {patient['lName']} - {appointment_time}"):
-                    st.write(f"Email: {patient['Email']}")
-                    patient_status = check_and_update_patient_completion_status(patient["PatientID"], patients_collection)
-                    st.write(f"Status: {patient_status}")
+                if patient_status == "Completed":
+                    # Check if the report already exists in the database
+                    document = patients_collection.find_one({"PatientID": patient["PatientID"]})
+                    if 'Subjective' in document and 'Objective' in document:  # assuming these keys exist if the report was generated
+                        report_sections = {key: document[key] for key in ['Subjective', 'Objective', 'Analysis', 'Plan', 'Implementation', 'Evaluation']}
+                        doc_io = generate_report_docx(report_sections)
+                    else:
+                        report_sections, doc_io = generate_downloadable_docx(patient["PatientID"], patients_collection)
+                    
+                    if report_sections:
+                        for section, content in report_sections.items():
+                            st.subheader(section)
+                            st.markdown(content, unsafe_allow_html=True)
+                            st_copy_to_clipboard(content)
 
-                    if patient_status == "Not Sent":
-                        link = "https://breezy.streamlit.app"
-                        if st.button("Send Email", key=f"send_email_{index}"):
-                            if send_email(patient['Email'], link, patients_collection, patient["fName"]):
-                                st.success(f"Email sent to {patient['Email']}")
-                                st.experimental_rerun()
-                            else:
-                                st.error("Failed to send email.")
+                        full_name = f"{patient['fName']}_{patient['lName']}".replace(' ', '_')
+                        file_name = f"{full_name}_Patient_Assessment_Report.docx"
 
-                    if patient_status == "Completed":
-                        download_button_pressed = st.button("Generate Report", key=f"download_{patient['PatientID']}_{index}")
+                        st.download_button(label="Download as Word Document",
+                                           data=doc_io.getvalue(),
+                                           file_name=file_name,
+                                           mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
-                        if download_button_pressed:
-                            # Generate the document only when the button is pressed
-                            basic_info, doc_io = generate_downloadable_docx(patient["PatientID"], patients_collection)
-
-                            # Generate a dynamic filename based on the patient's full name
-                            if 'fName' in basic_info and 'lName' in basic_info:
-                                full_name = f"{basic_info['fName']}_{basic_info['lName']}".replace(' ', '_')
-                            else:
-                                full_name = "Patient"
-                            file_name = f"{full_name}_Patient_Assessment_Report.docx"
-
-                            # Directly offer the document for download
-                            st.download_button(label="Download Report",
-                                               data=doc_io.getvalue(),  # Use getvalue() to access the BytesIO content
-                                               file_name=file_name,
-                                               mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        else:
-            st.write("No 'Date' field found in the documents.")
-    else:
-        st.write("No patient data available.")
-
-
-
-
+def generate_report_docx(report_sections):
+    doc = Document()
+    doc.add_heading('Patient Assessment Report', 0)
+    
+    for section, content in report_sections.items():
+        doc.add_heading(section, level=1)
+        doc.add_paragraph(content)
+    
+    doc_io = BytesIO()
+    doc.save(doc_io)
+    doc_io.seek(0)
+    
+    return doc_io
 
 def main():
     display_patient_info()

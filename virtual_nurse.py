@@ -16,16 +16,19 @@ def initialize_session_state():
         st.session_state['chat_history'] = []
         st.session_state['initial_questions'] = [
             "Are you a new patient?",
-            "What is your name?",
             "What is your approximate height in inches?",
             "What is your approximate weight in pounds?",
             "Are you currently taking any medications?",
             "Have you had any recent surgeries?",
             "Do you have any known drug allergies?",
+            "Are you a tobacco smoker?",  # New question
+            "Have you received an influenza vaccine during the flu season (August 2020-March 2021 or August 2021-March 2022)?",  # New question
+            "Have you ever had a Pneumonia vaccine (Prevnar 13 and/or Pneumovax 23)?",  # New question
             "Finally, what are you in for today?"
         ]
         st.session_state['initial_answers'] = {}
         st.session_state['current_question_index'] = 0
+
 
 # Ensure initialization happens early in the app's execution
 initialize_session_state()
@@ -82,6 +85,9 @@ if 'bot' not in st.session_state:
         "Are you currently taking any medications?",
         "Have you had any recent surgeries?",
         "Do you have any known drug allergies?",
+        "Are you a tobacco smoker?",  # New question
+        "Have you received an influenza vaccine during the flu season (August 2020-March 2021 or August 2021-March 2022)?",  # New question
+        "Have you ever had a Pneumonia vaccine (Prevnar 13 and/or Pneumovax 23)?",  # New question
         "Finally, what are you in for today?"
     ]
     st.session_state['initial_answers'] = {}
@@ -108,7 +114,7 @@ def handle_initial_questions():
         user_detail_response = None
         valid_response = False  # Track whether the response is valid
 
-        if question in ["Are you a new patient?", "Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
+        if question in ["Are you a new patient?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
             user_response = st.radio(question, ["Yes", "No"], key=input_key)
             valid_response = True  # Radio buttons always have a valid response
             if user_response == "Yes" and question in ["Are you currently taking any medications?", "Have you had any recent surgeries?", "Do you have any known drug allergies?"]:
@@ -131,6 +137,36 @@ def handle_initial_questions():
             min_value = 0 if "weight" in question.lower() else 0  # Example minimum values for height and weight
             user_response = st.number_input(question, min_value=min_value, format="%d", key=input_key)
             valid_response = user_response >= min_value  # Validate height or weight is above minimum
+        elif question == "Are you currently taking any medications?":
+            user_response = st.radio(question, ["Yes", "No"], key=input_key)
+            if user_response == "Yes":
+                if 'medication_count' not in st.session_state:
+                    st.session_state['medication_count'] = 1
+
+                for i in range(st.session_state['medication_count']):
+                    med_input_key = f"medication_{i}"
+                    user_medication_response = st.text_input("Please list your medication", key=med_input_key)
+                    if i == 0 or st.session_state.get(med_input_key, "").strip() != "":
+                        valid_response = True
+
+                if st.button("+1", key=f"add_med_{st.session_state['medication_count']}"):
+                    st.session_state['medication_count'] += 1
+                    st.experimental_rerun()
+            else:
+                valid_response = True
+
+
+        if question == "Are you a tobacco smoker?":
+            user_response = st.radio(question, ["Current", "Former", "Never"], key=input_key)
+            valid_response = user_response in ["Current", "Former", "Never"]
+
+        elif question.startswith("Have you received an influenza vaccine"):
+            user_response = st.radio(question, ["Yes", "No"], key=input_key)
+            valid_response = user_response in ["Yes", "No"]
+
+        elif question.startswith("Have you ever had a Pneumonia vaccine"):
+            user_response = st.radio(question, ["Yes", "No"], key=input_key)
+            valid_response = user_response in ["Yes", "No"]
 
         if st.button("Submit", key=f"submit_{input_key}"):
             if valid_response:
@@ -152,6 +188,9 @@ def handle_initial_questions():
                     follow_up_question = bot.generate_response(user_response)
                     st.session_state.chat_history.append(("Virtual Nurse", follow_up_question))
                     st.session_state['message_counter'] = 0  # Reset message counter for the next part of the conversation
+                
+                if question == "Are you currently taking any medications?" and user_response == "Yes":
+                    st.session_state.initial_answers["Medications"] = user_detail_response
 
                 st.experimental_rerun()
             
@@ -192,6 +231,10 @@ def handle_chat_after_initial_questions():
                 st.success("Thank you for your time, we'll see you in the office later today.")
             else:
                 st.experimental_rerun()
+    else:
+        st.success("Thank you for your time, we'll see you in the office later today.")
+
+
 
 
 
