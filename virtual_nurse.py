@@ -258,11 +258,15 @@ if st.checkbox("Click here to accept"):
     patient_id = extract_query_parameters()
 
 
-    if bot.finished == True:
-        full_chat_history = st.session_state.chat_history
-        
-        patient_id = extract_query_parameters()  # Ensure this function returns the patient_id correctly
+    if bot.finished:
+        full_chat_history = st.session_state['chat_history']
+        patient_id = extract_query_parameters()  # Make sure this function accurately extracts the patient_id
+
         if patient_id:
-            store_full_assessment_in_mongodb(full_chat_history, patient_id, patients_collection)
+            store_successful = store_full_assessment_in_mongodb(full_chat_history, patient_id, patients_collection)
+            if store_successful:
+                st.success("Assessment stored successfully and status updated to Completed.")
+            else:
+                st.error("Failed to store assessment or update status.")
         else:
-            st.error("Could not update patient record. Patient ID is missing or invalid.")
+            st.error("Patient ID is missing or invalid.")
