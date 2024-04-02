@@ -53,7 +53,8 @@ def store_full_assessment_in_mongodb(chat_history, patient_id, patients_collecti
         "Surgeries": answers.get("Have you had any recent surgeries?", "No information"),
         "Drug_Allergies": answers.get("Do you have any known drug allergies?", "No information"),
         "Reason_For_Visit": answers.get("Finally, what are you in for today?", "No information"),
-        "Assessment": chat_history  # Store the full chat history in the Assessment field
+        "Assessment": chat_history,  # Store the full chat history in the Assessment field
+        "Status": "Completed"
     }
 
     # Update MongoDB with the structured data
