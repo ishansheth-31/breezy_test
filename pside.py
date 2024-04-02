@@ -332,20 +332,22 @@ def display_patient_data(patients_collection):
                 patient_status = check_and_update_patient_completion_status(patient["PatientID"], patients_collection)
                 st.write(f"Status: {patient_status}")
 
-                # Unique key for each patient to track email sending status
                 email_sent_key = f"email_sent_{patient['PatientID']}"
 
-                # Check if the email has been sent; if not, show the send button
                 if not st.session_state.get(email_sent_key):
-                    if st.button("Send Email", key=patient["PatientID"]):
-                        link = "your_assessment_link_here"  # Update with the actual link to the assessment
+                    send_button = st.button("Send Email", key=patient["PatientID"])
+                    if send_button:
+                        link = "your_assessment_link_here"
                         email_sent = send_email(patient['Email'], link, patients_collection, patient['fName'])
                         if email_sent:
-                            st.session_state[email_sent_key] = True  # Update session state to indicate email has been sent
+                            st.session_state[email_sent_key] = True
                             st.success("Email sent successfully.")
+                            # Delay rerun or ensure the state is updated before rerunning
+                            time.sleep(1)  # Delay for 1 second before rerunning, as an example
                             st.experimental_rerun()
                         else:
                             st.error("Failed to send email.")
+
                 
 
 
