@@ -343,9 +343,10 @@ def display_patient_data(patients_collection):
                         if email_sent:
                             st.session_state[email_sent_key] = True  # Update session state to indicate email has been sent
                             st.success("Email sent successfully.")
+                            st.experimental_rerun()
                         else:
                             st.error("Failed to send email.")
-                st.experimental_rerun()
+                
 
 
                 if patient_status == "Completed":
