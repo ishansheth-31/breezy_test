@@ -337,7 +337,7 @@ def display_patient_data(patients_collection):
                 if not st.session_state.get(email_sent_key):
                     send_button = st.button("Send Email", key=patient["PatientID"])
                     if send_button:
-                        link = "your_assessment_link_here"
+                        link = "https://breezy.streamlit.app/"
                         email_sent = send_email(patient['Email'], link, patients_collection, patient['fName'])
                         if email_sent:
                             st.session_state[email_sent_key] = True
