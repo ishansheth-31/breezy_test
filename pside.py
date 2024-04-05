@@ -336,25 +336,24 @@ def display_patient_data(patients_collection):
 
                 email_sent_key = f"email_sent_{patient['PatientID']}"
 
-                if not st.session_state.get(email_sent_key):
+                # Check if the email status is not 'Sent', and session state doesn't already indicate email sent
+                if patient_status != "Sent" and not st.session_state.get(email_sent_key):
                     send_button = st.button("Send Email", key=patient["PatientID"])
                     if send_button:
                         link = "https://breezy.streamlit.app/"
                         email_sent = send_email(patient['Email'], link, patients_collection, patient['fName'])
                         if email_sent:
-                            st.session_state[email_sent_key] = True
+                            st.session_state[email_sent_key] = True  # Mark as sent in the session state
+                            update_patient_status(patient["PatientID"], "Sent", patients_collection)  # Update status in the DB
                             st.success("Email sent successfully.")
                             st.experimental_rerun()
                         else:
                             st.error("Failed to send email.")
 
-                
-
-
                 if patient_status == "Completed":
                     # Check if the report already exists in the database
                     document = patients_collection.find_one({"PatientID": patient["PatientID"]})
-                    if 'Subjective' in document and 'Objective' in document:  # assuming these keys exist if the report was generated
+                    if 'Subjective' in document and 'Objective' in document:
                         report_sections = {key: document[key] for key in ['Subjective', 'Objective', 'Analysis', 'Plan', 'Implementation', 'Evaluation']}
                         doc_io = generate_report_docx(report_sections)
                     else:
@@ -373,6 +372,7 @@ def display_patient_data(patients_collection):
                                            data=doc_io.getvalue(),
                                            file_name=file_name,
                                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
 
 def generate_report_docx(report_sections):
     doc = Document()

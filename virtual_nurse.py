@@ -224,6 +224,7 @@ def handle_chat_after_initial_questions():
         user_message_key = f"user_message_{st.session_state['message_counter']}"
         user_message = st.text_input("Your message:", key=user_message_key)
 
+        # Display the "Send" button only if the bot conversation is not finished
         if st.button("Send", key=f"send_{user_message_key}") and user_message:
             response = bot.generate_response(user_message)
             bot.should_stop(response)  # Check if the conversation should be stopped
@@ -233,6 +234,7 @@ def handle_chat_after_initial_questions():
             
             st.session_state['message_counter'] += 1
 
+            # Check again if the conversation has finished and rerun to refresh the UI
             if bot.finished:
                 st.success("Thank you for your time, we'll see you in the office later today.")
             else:
@@ -241,27 +243,25 @@ def handle_chat_after_initial_questions():
         st.success("Thank you for your time, we'll see you in the office later today.")
 
 
+# At the beginning of your script, initialize session state variables if they don't exist
+if 'selected_doctor' not in st.session_state:
+    st.session_state['selected_doctor'] = None
 
+if 'consent_given' not in st.session_state:
+    st.session_state['consent_given'] = False
 
-
-
-
-
+# When selecting a doctor, use the session state to store the selected value
 st.title("Virtual Nurse Patient Assessment")
+practice = st.selectbox("Who are you seeing", listofnames, index=listofnames.index(st.session_state['selected_doctor']) if st.session_state['selected_doctor'] in listofnames else 0)
+st.session_state['selected_doctor'] = practice  # Store the selected doctor in session state
 
-practice = st.selectbox("Who are you seeing", listofnames)
-user_doc = accounts.find_one({"Name": practice})
-if user_doc:
-    main_db = user_doc["Database"]
-    db1 = client[main_db]
-    db_test = user_doc["Collection"]
-    patients_collection = db1[db_test]
-
-
+# When handling consent, store the checkbox state in session state
 url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduGT4U5l4/edit?usp=sharing"
-
 st.markdown("I consent to filling out this assessment. Click here to access our [document](%s) containing more information." % url)
-if st.checkbox("Click here to accept"):
+consent = st.checkbox("Click here to accept", value=st.session_state['consent_given'])
+st.session_state['consent_given'] = consent  # Store the consent status in session state
+
+if consent:
 
     display_chat_history()
 
