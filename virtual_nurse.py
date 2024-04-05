@@ -8,14 +8,12 @@ import json
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-def load_db_config():
-    with open('db_config.json', 'r') as f:
-        config = json.load(f)
-    return config
 
-db_config = load_db_config()
-db = client[db_config['database_name']]
-patients_collection = db[db_config['collection_name']]
+listofnames = []
+breezyaccounts = client["breezyaccounts"]
+accounts = breezyaccounts["accounts"]
+for account in accounts.find():
+    listofnames.append(account.get("Name"))
 
 def initialize_session_state():
     if 'bot' not in st.session_state:
@@ -250,6 +248,15 @@ def handle_chat_after_initial_questions():
 
 
 st.title("Virtual Nurse Patient Assessment")
+
+practice = st.selectbox("Who are you seeing", listofnames)
+user_doc = accounts.find_one({"Name": practice})
+if user_doc:
+    main_db = user_doc["Database"]
+    db1 = client[main_db]
+    db_test = user_doc["Collection"]
+    patients_collection = db1[db_test]
+
 
 url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduGT4U5l4/edit?usp=sharing"
 
