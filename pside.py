@@ -57,7 +57,6 @@ openai_client = OpenAI(api_key=api_key)
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-db1 = client.Southernurogyno
 
 db = client.breezyaccounts
 accounts_collection = db.accounts
@@ -77,6 +76,8 @@ def validate_credentials(email, password):
     user_doc = accounts_collection.find_one({"Email": email, "Password": password})
     if user_doc:
         # Retrieve the patients collection for the logged-in user
+        main_db = user_doc["Database"]
+        db1 = client[main_db]
         db_test = user_doc["Collection"]
         patients_collection = db1[db_test]
         st.session_state['logged_in'] = True
