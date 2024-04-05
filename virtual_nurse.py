@@ -255,6 +255,13 @@ st.title("Virtual Nurse Patient Assessment")
 practice = st.selectbox("Who are you seeing", listofnames, index=listofnames.index(st.session_state['selected_doctor']) if st.session_state['selected_doctor'] in listofnames else 0)
 st.session_state['selected_doctor'] = practice  # Store the selected doctor in session state
 
+user_doc = accounts.find_one({"Name": practice})
+if user_doc:
+    main_db = user_doc["Database"]
+    db1 = client[main_db]
+    db_test = user_doc["Collection"]
+    patients_collection = db1[db_test]
+
 # When handling consent, store the checkbox state in session state
 url = "https://docs.google.com/document/d/1g63YfenbIJZXq9SG3l4kAcpLe9EOq126SGduGT4U5l4/edit?usp=sharing"
 st.markdown("I consent to filling out this assessment. Click here to access our [document](%s) containing more information." % url)
