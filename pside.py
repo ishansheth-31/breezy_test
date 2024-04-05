@@ -334,22 +334,19 @@ def display_patient_data(patients_collection):
                 patient_status = check_and_update_patient_completion_status(patient["PatientID"], patients_collection)
                 st.write(f"Status: {patient_status}")
 
-                email_sent_key = f"email_sent_{patient['PatientID']}"
-
-                # Check if the email status is not 'Sent', and session state doesn't already indicate email sent
-                if patient_status != "Sent" and not st.session_state.get(email_sent_key):
+                # Only show the "Send Email" button if the patient status is "Not Sent"
+                if patient_status == "Not Sent":
                     send_button = st.button("Send Email", key=patient["PatientID"])
                     if send_button:
                         link = "https://breezy.streamlit.app/"
                         email_sent = send_email(patient['Email'], link, patients_collection, patient['fName'])
                         if email_sent:
-                            st.session_state[email_sent_key] = True  # Mark as sent in the session state
                             update_patient_status(patient["PatientID"], "Sent", patients_collection)  # Update status in the DB
                             st.success("Email sent successfully.")
                             st.experimental_rerun()
                         else:
                             st.error("Failed to send email.")
-
+                
                 if patient_status == "Completed":
                     # Check if the report already exists in the database
                     document = patients_collection.find_one({"PatientID": patient["PatientID"]})
