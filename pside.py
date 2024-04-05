@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 import re  # Import the regular expressions module
 from st_copy_to_clipboard import st_copy_to_clipboard
+import json
 
 
 new_prompt = """\nPHASE 3- Documentation Synthesis:
@@ -64,6 +65,11 @@ accounts_collection = db.accounts
 
 import streamlit as st
 
+def save_db_config(database_name, collection_name):
+    config = {'database_name': database_name, 'collection_name': collection_name}
+    with open('db_config.json', 'w') as f:
+        json.dump(config, f)
+
 def login_form():
     with st.form("login_form"):
         st.title("Physician Login")
@@ -80,6 +86,7 @@ def validate_credentials(email, password):
         db1 = client[main_db]
         db_test = user_doc["Collection"]
         patients_collection = db1[db_test]
+        save_db_config(main_db, db_test)
         st.session_state['logged_in'] = True
         st.session_state['patients_collection'] = patients_collection
         st.session_state['user_email'] = email  # Store the user's email in session state for easy access

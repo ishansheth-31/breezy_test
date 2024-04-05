@@ -3,12 +3,19 @@ from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
 import os
+import json
 
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')
 
-db = client.Eastmariettafamilydentistry
-patients_collection = db.emfd
+def load_db_config():
+    with open('db_config.json', 'r') as f:
+        config = json.load(f)
+    return config
+
+db_config = load_db_config()
+db = client[db_config['database_name']]
+patients_collection = db[db_config['collection_name']]
 
 def initialize_session_state():
     if 'bot' not in st.session_state:
