@@ -3,7 +3,26 @@ from app import MedicalChatbot
 from pymongo import MongoClient
 from uuid import UUID
 import os
+<<<<<<< Updated upstream
 import json
+=======
+import asyncio
+import websockets
+import json
+import pyaudio
+from base64 import b64encode
+
+# Replace 'your_assemblyai_api_key' with your actual AssemblyAI API key
+ASSEMBLYAI_API_KEY = "f47fc69f44914e5d973f9d2f719ba271"
+ASSEMBLYAI_ENDPOINT = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
+
+FRAMES_PER_BUFFER = 3200  # Adjust this value if needed
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000  # AssemblyAI real-time transcription requires a sample rate of 16000
+
+
+>>>>>>> Stashed changes
 
 mongo_key = os.getenv('MONGO_KEY')
 client = MongoClient('mongodb+srv://ishansheth31:Kevi5han1234@breezytest1.saw2kxe.mongodb.net/')

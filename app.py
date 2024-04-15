@@ -1,8 +1,13 @@
 from openai import OpenAI
 from docx import Document
 import os
+import assemblyai as aai
+import time
 
-api_key = os.getenv('OPENAI_API_KEY')
+aai.settings.api_key = "f47fc69f44914e5d973f9d2f719ba271"
+
+
+api_key = "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"
 
 # Initialize OpenAI client with your API key
 client = OpenAI(api_key=api_key)
@@ -101,7 +106,7 @@ class MedicalChatbot:
         last_answer = ""
         for question in questions:
             print(question)
-            answer = input("You: ")
+            answer = listen()
             self.initial_questions_dict[question] = answer
             if question.startswith("Finally"):
                 last_answer = answer  # Save the last answer for transition
@@ -226,6 +231,60 @@ Here is the chat history to base this off of below: \n"""
         except Exception as e:
             return f"An error occurred: {str(e)}"
 
+complete_transcript = ""
+
+def listen(duration=5):
+    global complete_transcript
+    complete_transcript = ""  # Reset the transcript at the start of each call
+
+    def on_open(session_opened: aai.RealtimeSessionOpened):
+        print("Session ID:", session_opened.session_id)
+
+    def on_data(transcript: aai.RealtimeTranscript):
+        global complete_transcript  # Use nonlocal to modify the outer scope variable
+        if not transcript.text:
+            return
+
+        complete_transcript += transcript.text + " "
+        print(transcript.text, end="\r\n" if isinstance(transcript, aai.RealtimeFinalTranscript) else "\r")
+
+    def on_error(error: aai.RealtimeError):
+        print("An error occurred:", error)
+
+    def on_close():
+        print("Closing Session")
+
+    transcriber = aai.RealtimeTranscriber(
+        on_data=on_data,
+        on_error=on_error,
+        sample_rate=44100,
+        on_open=on_open,
+        on_close=on_close,
+    )
+
+    transcriber.connect()
+
+    # Open a microphone stream and manage the stream manually
+    microphone_stream = aai.extras.MicrophoneStream()
+
+    start_time = time.time()
+
+    try:
+        while time.time() - start_time < duration:
+            audio_data = microphone_stream#.read(4096)
+            transcriber.stream(audio_data)
+    except Exception as e:
+        print(f"An error occurred during transcription: {e}")
+    finally:
+        transcriber.close()
+        microphone_stream.close()
+
+    return complete_transcript.strip()
+
+# Example usage
+transcript = listen(5)
+print("Transcribed Text:", transcript)
+
 def main():
     print("Hello, I'm your virtual nurse assistant. Let's start with some basic questions.")
     bot = MedicalChatbot()
@@ -237,7 +296,7 @@ def main():
         print("Virtual Nurse:", response)
 
     while not bot.finished:
-        user_input = input("You: ")
+        user_input = listen()
         response = bot.generate_response(user_input)
         print("Virtual Nurse:", response)
         bot.should_stop(response)
