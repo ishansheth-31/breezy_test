@@ -1,7 +1,8 @@
-from openai import OpenAI
 from docx import Document
-import os
 import assemblyai as aai
+from elevenlabs import generate, stream
+from openai import OpenAI
+from playsound import playsound
 import time
 
 aai.settings.api_key = "f47fc69f44914e5d973f9d2f719ba271"
